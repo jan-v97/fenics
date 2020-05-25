@@ -1,0 +1,23 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.29326.143
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{888888A0-9F3D-457C-B088-3A5042F75D52}") = "elasticity", "elasticity.pyproj", "{D7DED73D-BD43-4B8F-B297-A445E0C8CDF7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D7DED73D-BD43-4B8F-B297-A445E0C8CDF7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D7DED73D-BD43-4B8F-B297-A445E0C8CDF7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C8A1996E-D40C-4E2D-9A8F-6DC061F6CE9B}
+	EndGlobalSection
+EndGlobal
