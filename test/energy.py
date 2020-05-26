@@ -18,7 +18,7 @@ domain.set_subdomain(1, domain0)
 domain.set_subdomain(2, domain1)
 
 # Create mesh
-mesh = generate_mesh(domain, 50, "cgal")
+mesh = generate_mesh(domain, 30, "cgal")
 
 # set different coefficients on subdomains
 class Omega_0(SubDomain): 
@@ -52,14 +52,39 @@ class K(UserExpression):
 
 coef = K(G,0.,1.)
 
+
 # define function space
 V = FunctionSpace(mesh, 'P', 1)
 
-# define periodic boundary conditions
-u_D = Expression('0.1*x[1]', degree=1)
-def boundary(x, on_boundary):
-	return on_boundary
-bc = DirichletBC(V, u_D, boundary)
+
+# define dirichlet boundary condition
+u_L=Expression('x[1]<0.25? constl*4.*x[1] : constl*(4./3.)*(1-x[1])',degree=1, constl=0.1)
+u_R=Expression('x[1]<0.75? constr*(4./3.)*x[1] : constr*4.*(1-x[1])',degree=1, constr= -0.05)
+
+def boundary_L(x,on_boundary):
+	return on_boundary and (x[0] < tol)
+bc_L = DirichletBC(V,u_L,boundary_L)
+
+def boundary_R(x,on_boundary):
+	return on_boundary and (x[0] > 1-tol)
+bc_R = DirichletBC(V,u_R,boundary_R)
+bc = [bc_L,bc_R]
+
+
+# Sub domain for Periodic boundary condition
+class PeriodicBoundary(SubDomain):
+
+    # Left boundary is "target domain" G
+    def inside(self, x, on_boundary):
+        return bool(x[1] < tol and x[1] > -tol and on_boundary)
+
+    # Map right boundary (H) to left boundary (G)
+    def map(self, x, y):
+        y[0] = x[0]
+        y[1] = x[1] - 1.0
+
+# Create periodic boundary condition
+pbc = PeriodicBoundary()
 
 
 # solve Euler Lagrange equation and compute cost functional
