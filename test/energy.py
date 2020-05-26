@@ -18,7 +18,7 @@ domain.set_subdomain(1, domain0)
 domain.set_subdomain(2, domain1)
 
 # Create mesh
-mesh = generate_mesh(domain, 30, "cgal")
+mesh = generate_mesh(domain, 20, "cgal")
 
 # set different coefficients on subdomains
 class Omega_0(SubDomain): 
@@ -55,11 +55,12 @@ coef = K(G,0.,1.)
 
 # define function space
 V = FunctionSpace(mesh, 'P', 1)
+W = VectorFunctionSpace(mesh, 'P', 1)
 
 
 # define dirichlet boundary condition
-u_L=Expression('x[1]<0.25? constl*4.*x[1] : constl*(4./3.)*(1-x[1])',degree=1, constl=0.1)
-u_R=Expression('x[1]<0.75? constr*(4./3.)*x[1] : constr*4.*(1-x[1])',degree=1, constr= -0.05)
+u_L=Expression('x[1]<0.25? constl*4.*x[1] : constl*(4./3.)*(1-x[1])',degree=1, constl=0.)
+u_R=Expression('x[1]<0.75? constr*(4./3.)*x[1] : constr*4.*(1-x[1])',degree=1, constr= 0.)
 
 def boundary_L(x,on_boundary):
 	return on_boundary and (x[0] < tol)
@@ -98,5 +99,8 @@ solve(a - L == 0, u, bc)
 #u = Function(V)
 vtkfile = File('energy/G.pvd')
 vtkfile << G
+vtkfile = File('energy/gradient.pvd')
+gradu = project(grad(u),W)
+vtkfile << gradu
 vtkfile = File('energy/solution.pvd')
 vtkfile << u
