@@ -1,0 +1,15 @@
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp: In member function ‘virtual void dolfin::dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp:63:23: error: ‘domainnumber’ was not declared in this scope
+           values[0] = domainnumber == 0 ? a1*x[0] : domainnumber == 2 ? x[0] : x[0];
+                       ^~~~~~~~~~~~
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp:63:23: note: suggested alternative: ‘setdomainname’
+           values[0] = domainnumber == 0 ? a1*x[0] : domainnumber == 2 ? x[0] : x[0];
+                       ^~~~~~~~~~~~
+                       setdomainname
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp: In member function ‘virtual double dolfin::dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38::get_property(std::__cxx11::string) const’:
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp:76:11: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+           if (name == "a1") return a1;          if (name == "r") return r;
+           ^~
+/tmp/tmp5lkb_hs9/dolfin_expression_1ad2d29ee21d15dbfdfc662798f4db38.cpp:76:49: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+           if (name == "a1") return a1;          if (name == "r") return r;
+                                                 ^~

@@ -1,0 +1,29 @@
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp: In member function ‘virtual void dolfin::dolfin_expression_efbe9c205b3e4542238feb120b91b010::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:98: error: ‘a1’ was not declared in this scope
+           values[0] = domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0];
+                                                                                                  ^~
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:98: note: suggested alternative: ‘y1’
+           values[0] = domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0];
+                                                                                                  ^~
+                                                                                                  y1
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:126: error: ‘a2’ was not declared in this scope
+           values[0] = domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0];
+                                                                                                                              ^~
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:126: note: suggested alternative:
+In file included from /usr/include/boost/optional/optional.hpp:35:0,
+                 from /usr/include/boost/optional.hpp:15,
+                 from /usr/local/include/dolfin/parameter/Parameters.h:24,
+                 from /usr/local/include/dolfin/common/Variable.h:28,
+                 from /usr/local/include/dolfin/function/GenericFunction.h:30,
+                 from /usr/local/include/dolfin/function/Expression.h:28,
+                 from /tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:13:
+/usr/include/boost/type_traits/type_with_alignment.hpp:89:40: note:   ‘boost::tt_align_ns::a2’
+ struct __attribute__((__aligned__(2))) a2 {};
+                                        ^~
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:107: error: ‘arctan’ was not declared in this scope
+           values[0] = domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0];
+                                                                                                           ^~~~~~
+/tmp/tmprxmgn_fp/dolfin_expression_efbe9c205b3e4542238feb120b91b010.cpp:65:107: note: suggested alternative: ‘atan’
+           values[0] = domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0];
+                                                                                                           ^~~~~~
+                                                                                                           atan
