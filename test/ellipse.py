@@ -22,7 +22,7 @@ domain.set_subdomain(2, domain1)
 domain.set_subdomain(3, domain2)
 
 # Create mesh
-mesh = generate_mesh(domain, 20, "cgal")
+mesh = generate_mesh(domain, 40, "cgal")
 
 # set different coefficients on subdomains
 class Omega_0(SubDomain): 
@@ -76,11 +76,11 @@ class Phi(UserExpression):
 			values[0] = x[0]
 			values[1] = x[1]
 		elif (self.materials[cell.index] == 1):
-			values[0] = (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*x[0]
-			values[1] = (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * x[1]
+			values[0] = ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *cos(self.a2) + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) *sin(self.a2)
+			values[1] = ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) * cos(self.a2) - ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *sin(self.a2)
 		else:
-			values[0] = sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)
-			values[1] = sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)
+			values[0] = (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *cos(self.a2) + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
+			values[1] = (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) * cos(self.a2) - (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
 
 	def value_shape(self):
 		return (2,)
@@ -98,11 +98,11 @@ class Displacement(UserExpression):
 			values[0] = 0
 			values[1] = 0
 		elif (self.materials[cell.index] == 1):
-			values[0] = -x[0] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*x[0]) 
-			values[1] = -x[1] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * x[1]) 
+			values[0] = -x[0] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *cos(self.a2) + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) *sin(self.a2)
+			values[1] = -x[1] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) * cos(self.a2) - ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *sin(self.a2)
 		else:
-			values[0] = -x[0] + (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) 
-			values[1] = -x[1] + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) 
+			values[0] = -x[0] + (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *cos(self.a2) + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
+			values[1] = -x[1] + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) * cos(self.a2) - (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
 
 	def value_shape(self):
 		return (2,)
@@ -150,7 +150,7 @@ bc = [bc_L,bc_R]
 
 # startvalues
 a1 = 1.5
-a2 = 0.85
+a2 = 0.4
 
 
 # solve Euler Lagrange equation and compute cost functional
