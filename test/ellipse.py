@@ -10,7 +10,7 @@ tol= 1E-14
 r = 0.5
 
 # defining the geometry of the computational domain
-domain =   Rectangle(dolfin.Point(-1., -1.), dolfin.Point(1., 1.))
+domain =   Rectangle(dolfin.Point(-1.1, -1.1), dolfin.Point(1.1, 1.1))
 domain2 =   Circle(dolfin.Point(0.,0.),r)
 domainouter =   Circle(dolfin.Point(0.,0.),1)
 domain0 = domain -domainouter
@@ -118,12 +118,12 @@ class PeriodicBoundary(SubDomain):
 
 	# Left boundary is "target domain" G
 	def inside(self, x, on_boundary):
-		return bool(x[1] < -1.+tol and x[1] > -1.-tol and on_boundary)
+		return bool(x[1] < -1.1+tol and x[1] > -1.1-tol and on_boundary)
 
 	# Map top boundary (H) to bottom boundary (G)
 	def map(self, x, y):
 		y[0] = x[0]
-		y[1] = x[1] - 2.0
+		y[1] = x[1] - 2.2
 
 
 # define function space with periodic boundary
@@ -136,11 +136,11 @@ u_L=Expression('x[1]<0.25? constl*4.*x[1] : constl*(4./3.)*(1-x[1])',degree=1, c
 u_R=Expression('x[1]<0.75? constr*(4./3.)*x[1] : constr*4.*(1-x[1])',degree=1, constr= 0.)
 
 def boundary_L(x,on_boundary):
-	return on_boundary and (x[0] < -1 + tol)
+	return on_boundary and (x[0] <= -1.1 + tol)
 bc_L = DirichletBC(V,u_L,boundary_L)
 
 def boundary_R(x,on_boundary):
-	return on_boundary and (x[0] > 1-tol)
+	return on_boundary and (x[0] >= 1.1-tol)
 bc_R = DirichletBC(V,u_R,boundary_R)
 
 bc = [bc_L,bc_R]
