@@ -1,8 +1,0 @@
-/tmp/tmpx61sztm8/dolfin_expression_88597ac98cb7b43cd71f2344bcbde5c6.cpp: In member function ‘virtual void dolfin::dolfin_expression_88597ac98cb7b43cd71f2344bcbde5c6::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
-/tmp/tmpx61sztm8/dolfin_expression_88597ac98cb7b43cd71f2344bcbde5c6.cpp:65:43: error: ‘a1’ was not declared in this scope
-           values[0] = domainnumber == 0 ? a1*x[0] : domainnumber == 2 ? x[0] : x[0];
-                                           ^~
-/tmp/tmpx61sztm8/dolfin_expression_88597ac98cb7b43cd71f2344bcbde5c6.cpp:65:43: note: suggested alternative: ‘y1’
-           values[0] = domainnumber == 0 ? a1*x[0] : domainnumber == 2 ? x[0] : x[0];
-                                           ^~
-                                           y1

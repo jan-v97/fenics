@@ -1,6 +1,7 @@
 from fenics import *
 #import dolfin
 from mshr import *
+from math import *
 from ufl import nabla_div
 import numpy as np
 import dolfin.cpp.mesh
@@ -29,7 +30,7 @@ class Omega_0(SubDomain):
 		return ((x[0])*(x[0]) +(x[1])*(x[1]) >= 1-tol)
 class Omega_1(SubDomain): 
 	def inside(self,x,on_boundary): 
-		return ((x[0])*(x[0]) +(x[1])*(x[1]) <= 1+tol) and ((x[0])*(x[0]) +(x[1])*(x[1]) >= r*r-tol)
+		return ((x[0])*(x[0]) +(x[1])*(x[1]) <= 1+tol) and ((x[0])*(x[0]) +(x[1])*(x[1]) >= r*r-0.01*r)
 class Omega_2(SubDomain): 
 	def inside(self,x,on_boundary): 
 		return ((x[0])*(x[0]) +(x[1])*(x[1]) <= r*r+tol)
@@ -70,22 +71,46 @@ class Phi(UserExpression):
 		self.a2 = a2
 		self.r = r
 
-	def eval(self,values,x,cell):
+	def eval_cell(self,values,x,cell):
 		if (self.materials[cell.index] == 0):
-			values[0] = self.a1*x[0]
-			values[1] = self.a1*x[1]
+			values[0] = x[0]
+			values[1] = x[1]
 		elif (self.materials[cell.index] == 1):
-			values[0] = self.a1*x[0]
-			values[1] = self.a1*x[1]
+			values[0] = (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*x[0]
+			values[1] = (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * x[1]
 		else:
-			values[0] = self.a1*x[0]
-			values[1] = self.a1*x[1]
+			values[0] = sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)
+			values[1] = sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)
 
 	def value_shape(self):
-		return ()
+		return (2,)
 
-inner = K(G,0,0,1)
-domainnumber = K(G,0,1,2)
+class Displacement(UserExpression):
+	def __init__(self,materials,a1,a2,r, **kwargs):
+		super().__init__(**kwargs)
+		self.materials = materials
+		self.a1 = a1
+		self.a2 = a2
+		self.r = r
+
+	def eval_cell(self,values,x,cell):
+		if (self.materials[cell.index] == 0):
+			values[0] = 0
+			values[1] = 0
+		elif (self.materials[cell.index] == 1):
+			values[0] = -x[0] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*x[0]) 
+			values[1] = -x[1] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * x[1]) 
+		else:
+			values[0] = -x[0] + (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) 
+			values[1] = -x[1] + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) 
+
+	def value_shape(self):
+		return (2,)
+
+
+
+
+interior = K(G,0,0,1)
 
 
 # Sub domain for Periodic boundary condition
@@ -117,42 +142,41 @@ bc_L = DirichletBC(V,u_L,boundary_L)
 def boundary_R(x,on_boundary):
 	return on_boundary and (x[0] > 1-tol)
 bc_R = DirichletBC(V,u_R,boundary_R)
+
 bc = [bc_L,bc_R]
 
 
 
 
 # startvalues
-a1 = 1.*r
-a2 = 0.
+a1 = 1.5
+a2 = 0.85
 
-#cppcodePhi1 = 'domainnumber == 0 ? x[0] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) * a1 * sin(arctan((x[1]/x[0])-a2)) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r))*x[0]'
-#cppcodePhi2 = 'domainnumber == 0 ? x[1] : domainnumber == 2 ? sqrt(x[0]*x[0]+x[1]*x[1]) * ((r*r)/a1) * cos(arctan((x[1]/x[0])-a2)) : (1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r) *sqrt(x[0]*x[0]+x[1]*x[1]) ** ((r*r)/a1) * cos(arctan((x[1]/x[0])-a2))  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-r)) * x[1] '
-cppcodePhi1 = '(domainnumber == 0) ? (a1*x[0]) : ((domainnumber == 2) ? x[0] : x[0])'
-cppcodePhi2 = '(domainnumber == 0) ? (a1*x[1]) : ((domainnumber == 2) ? x[1] : x[1])'
 
 # solve Euler Lagrange equation and compute cost functional
 veka = Constant((a1,a2))
-Phi = Expression((cppcodePhi1, cppcodePhi2),degree=2,domainnumber = domainnumber, a1 = 5)
 vek10 = Constant((1.,0.))
+deformation = Phi(G,a1,a2,r,element=W.ufl_element())
+displacement = Displacement(G,a1,a2,r,element=W.ufl_element())
+defu = interpolate(deformation, W)
+displ = interpolate(displacement,W)
+
+
 u=Function(V)
 v=TestFunction(V)
-# energy = abs(det(grad(Phi)))*(grad(u)-inner*vek10)**2 *dx
-energy = (grad(u)-inner*vek10)**2 *dx
+energy = abs(det(grad(defu)))*(grad(u)-interior*vek10)**2 *dx
 a = derivative(energy,u,v)
-# a=dot((grad(u)-domainnumber*vek10),grad(v))*dx
-# *abs(det(grad(Phi(doamainnumber)))
 L=0
+# Compute solution
 solve(a - L == 0, u, bc)
-#Compute solution
-#u = Function(V)
+
+# save output
 vtkfile = File('ellipse/G.pvd')
 vtkfile << G
 vtkfile = File('ellipse/gradient.pvd')
 gradu = project(grad(u),W)
 vtkfile << gradu
-vtkfile = File('ellipse/deformation.pvd')
-deformation = Phi(G,a1,a2,r)
-vtkfile << deformation
+vtkfile = File('ellipse/displacement.pvd')
+vtkfile << displ
 vtkfile = File('ellipse/solution.pvd')
 vtkfile << u
