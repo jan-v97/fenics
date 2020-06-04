@@ -1,7 +1,8 @@
 {
   "ExpandedNodes": [
     "",
-    "\\test"
+    "\\test",
+    "\\test\\ellipse"
   ],
   "SelectedNode": "\\test\\ellipse.py",
   "PreviewInSolutionExplorer": false

@@ -62,6 +62,24 @@ class K(UserExpression):
 	def value_shape(self):
 		return ()
 
+# returns the distance of a point on the ellipsis for given parameters a,b and the angle theta
+def verzerren(a,b,theta):
+	return atan(a*tan(theta)/b)
+
+def l(a,b,theta):
+	thetav = verzerren(a,b,theta)
+	return sqrt(a*a*cos(thetav)*cos(thetav)+b*b*sin(thetav)*sin(thetav))
+
+# returns	0		if |(x,y)| = 1 and 
+#			1		if |(x,y)| = r
+def rad1(x,y,r):
+	return (1.-sqrt(x*x+y*y))/(1-r)
+
+# returns	1		if |(x,y)| = 1 and 
+#			0		if |(x,y)| = r
+def rad2(x,y,r):
+	return (sqrt(x*x+y*y)-r)/(1-r)
+
 
 class Phi(UserExpression):
 	def __init__(self,materials,a1,a2,r, **kwargs):
@@ -76,14 +94,15 @@ class Phi(UserExpression):
 			values[0] = x[0]
 			values[1] = x[1]
 		elif (self.materials[cell.index] == 1):
-			values[0] = ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *cos(self.a2) + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) *sin(self.a2)
-			values[1] = ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) * cos(self.a2) - ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *sin(self.a2)
+			values[0] = (rad1(x[0],x[1],self.r) * l(self.a1,(1./(self.a1)),atan2(x[1],x[0])-a2) + rad2(x[0],x[1],self.r)) * x[0]
+			values[1] = (rad1(x[0],x[1],self.r) * l(self.a1,(1./(self.a1)),atan2(x[1],x[0])-a2) + rad2(x[0],x[1],self.r)) * x[1]
 		else:
-			values[0] = (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *cos(self.a2) + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
-			values[1] = (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) * cos(self.a2) - (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
+			values[0] = (l(self.a1,(1./(self.a1)),atan2(x[1],x[0])-a2))*x[0]
+			values[1] = (l(self.a1,(1./(self.a1)),atan2(x[1],x[0])-a2))*x[1]
 
 	def value_shape(self):
 		return (2,)
+
 
 class Displacement(UserExpression):
 	def __init__(self,materials,a1,a2,r, **kwargs):
@@ -98,15 +117,14 @@ class Displacement(UserExpression):
 			values[0] = 0
 			values[1] = 0
 		elif (self.materials[cell.index] == 1):
-			values[0] = -x[0] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *cos(self.a2) + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) *sin(self.a2)
-			values[1] = -x[1] + ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)  +  (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r)) * (x[1]*cos(self.a2)+x[0]*sin(self.a2))) * cos(self.a2) - ((1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r) *sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2) + (1-(1-sqrt(x[0]*x[0]+x[1]*x[1]))/(1-self.r))*(x[0]*cos(self.a2)-x[1]*sin(self.a2))) *sin(self.a2)
+			values[0] = (rad1(x[0],x[1],self.r) * l(self.a1(x),(1./(self.a1(x))),atan2(x[1],x[0])-self.a2) + rad2(x[0],x[1],self.r) -1.) * x[0]
+			values[1] = (rad1(x[0],x[1],self.r) * l(self.a1(x),(1./(self.a1(x))),atan2(x[1],x[0])-self.a2) + rad2(x[0],x[1],self.r) -1.) * x[1]
 		else:
-			values[0] = -x[0] + (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *cos(self.a2) + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
-			values[1] = -x[1] + (sqrt(x[0]*x[0]+x[1]*x[1]) * (1./self.a1) * cos(atan2(x[0],x[1])-self.a2)) * cos(self.a2) - (sqrt(x[0]*x[0]+x[1]*x[1]) * self.a1 * sin(atan2(x[0],x[1])-self.a2)) *sin(self.a2)
+			values[0] = (l(self.a1(x),(1./(self.a1(x))),atan2(x[1],x[0])-self.a2)-1)*x[0]
+			values[1] = (l(self.a1(x),(1./(self.a1(x))),atan2(x[1],x[0])-self.a2)-1)*x[1]
 
 	def value_shape(self):
 		return (2,)
-
 
 
 
@@ -149,12 +167,15 @@ bc = [bc_L,bc_R]
 
 
 # startvalues
-a1 = 1.5
-a2 = 0.4
+starta1 = 1.5
+starta2 = 1.0
 
 
 # solve Euler Lagrange equation and compute cost functional
-veka = Constant((a1,a2))
+#a1 = Constant(starta1)
+#a2 = Constant(starta2)
+a1 = variable(starta1)
+a2 = variable(starta2)
 vek10 = Constant((1.,0.))
 deformation = Phi(G,a1,a2,r,element=W.ufl_element())
 displacement = Displacement(G,a1,a2,r,element=W.ufl_element())
@@ -169,6 +190,9 @@ a = derivative(energy,u,v)
 L=0
 # Compute solution
 solve(a - L == 0, u, bc)
+
+difa1 = diff(energy,a1)
+print (difa1)
 
 # save output
 vtkfile = File('ellipse/G.pvd')
