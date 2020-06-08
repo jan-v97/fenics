@@ -22,7 +22,7 @@ domain.set_subdomain(2, domain1)
 domain.set_subdomain(3, domain2)
 
 # Create mesh
-mesh = generate_mesh(domain, 40, "cgal")
+mesh = generate_mesh(domain, 30, "cgal")
 
 # set different coefficients on subdomains
 class Omega_0(SubDomain): 
