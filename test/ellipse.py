@@ -185,6 +185,7 @@ displ = interpolate(displacement,W)
 
 u=Function(V)
 v=TestFunction(V)
+# this ist not right yet:
 energy = abs(det(grad(defu)))*(grad(u)-interior*vek10)**2 *dx
 a = derivative(energy,u,v)
 L=0
