@@ -169,14 +169,22 @@ bc = DirichletBC(V, '0', boundary)
 
 #bc = [bc_L,bc_R]
 
-starta1 = 1.5
-starta2 = 0.3 * pi
 
-
-# solve Euler Lagrange equation and compute cost functional
-a1 = Constant(starta1)
-a2 = Constant(starta2)
+# startvalues
+maxrad = 1.8
+minrad = 1
+radsteps = 4
+rotsteps = 4
 vek10 = Constant((1.,0.))
+fobj = open("ellipse_energy/output.txt","w")
+fobj.write(str(maxrad)+'\n')
+fobj.write(str(minrad)+'\n')
+fobj.write(str(radsteps)+'\n')
+fobj.write(str(rotsteps)+'\n')
+
+# energy of circle
+a1 = Constant(1.)
+a2 = Constant(0.)
 deformation = Phi(G,a1,a2,r,element=W.ufl_element())
 displacement = Displacement(G,a1,a2,r,element=W.ufl_element())
 defu = interpolate(deformation, W)
@@ -188,20 +196,27 @@ a = derivative(energy,u,v)
 L=0
 # Compute solution
 solve(a - L == 0, u)
-print ("energie: ", assemble(abs(det(grad(defu)))*((inv(grad(defu).T)*grad(u))-interior*vek10)**2 *dx))
-#print ("dE/da1: ", assemble(derivative(energy,a1)))
-#print ("dE/da2: ", assemble(derivative(energy,a2)))
+energy_value = assemble(abs(det(grad(defu)))*((inv(grad(defu).T)*grad(u))-interior*vek10)**2 *dx)
+fobj.write(str(energy_value)+'\n')
+print ("circle, energie: ", energy_value ,'\n')
 
-#difa1 = diff(energy,a1)
-#print (difa1)
+for i in range(0,radsteps):
+	for j in range(0,rotsteps):
+		a1 = Constant(maxrad - i*(maxrad-minrad)/(radsteps))
+		a2 = Constant(j*(pi/(2*(rotsteps-1))))
+		deformation = Phi(G,a1,a2,r,element=W.ufl_element())
+		displacement = Displacement(G,a1,a2,r,element=W.ufl_element())
+		defu = interpolate(deformation, W)
+		displ = interpolate(displacement,W)
+		u=Function(V)
+		v=TestFunction(V)
+		energy = abs(det(grad(defu)))*((inv(grad(defu).T)*grad(u))-interior*vek10)**2 *dx
+		a = derivative(energy,u,v)
+		L=0
+		# Compute solution
+		solve(a - L == 0, u)
+		energy_value = assemble(abs(det(grad(defu)))*((inv(grad(defu).T)*grad(u))-interior*vek10)**2 *dx)
+		fobj.write(str(energy_value)+' ')
+		print ("i: ", i, " j:", j, "energie: ", energy_value ,' ')
 
-# save output
-vtkfile = File('ellipse/G.pvd')
-vtkfile << G
-vtkfile = File('ellipse/gradient.pvd')
-gradu = project(inv(grad(defu).T)*grad(u),W)
-vtkfile << gradu
-vtkfile = File('ellipse/displacement.pvd')
-vtkfile << displ
-vtkfile = File('ellipse/solution.pvd')
-vtkfile << u
+fobj.write('\n')

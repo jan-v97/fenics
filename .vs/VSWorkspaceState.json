@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\test",
-    "\\test\\ellipse"
+    "\\test\\ellipse",
+    "\\test\\ellipse_energy"
   ],
-  "SelectedNode": "\\test\\ellipse.py",
+  "SelectedNode": "\\test\\ellipse_energy\\plot.py",
   "PreviewInSolutionExplorer": false
 }
