@@ -1,10 +1,9 @@
 {
   "ExpandedNodes": [
     "",
-    "\\test",
-    "\\test\\ellipse",
-    "\\test\\ellipse_energy"
+    "\\deformation",
+    "\\test"
   ],
-  "SelectedNode": "\\test\\circle_exact_sol.py",
+  "SelectedNode": "\\deformation\\deformation.py",
   "PreviewInSolutionExplorer": false
 }
