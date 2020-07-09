@@ -2,6 +2,7 @@ from fenics import *
 from dolfin import *
 from mshr import *
 import numpy
+from math import *
 
 tol= 1E-14
 
@@ -106,37 +107,48 @@ class Identity(UserExpression):
 		return (2,)
 
 
+
+# returns the distance of a point on the ellipsis for given parameters a,b and the angle theta
+def verzerren(a,b,theta):
+	return atan(a*tan(theta)/b)
+
+def l(a,b,theta):
+	thetav = verzerren(a,b,theta)
+	return sqrt(a*a*cos(thetav)*cos(thetav)+b*b*sin(thetav)*sin(thetav))
+
+def circle_to_ellipse_x(a0,a1,x):
+	return (l(a0,(1./(a0)),atan2(x[1],x[0])-a1))*x[0]
+
+def circle_to_ellipse_y(a0,a1,x):
+	return (l(a0,(1./(a0)),atan2(x[1],x[0])-a1))*x[1]
+
 # functions to approximate the circle by a polygon
-def polygon_top(circle_points,r):
+def polygon_top(circle_points,r,a0,a1):
 	polygon = []
-	polygon.append(dolfin.Point(r,0.))
+	polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[r,0.]),circle_to_ellipse_y(a0,a1,[r,0.])))
 	for i in range(1,circle_points-1):
-		polygon.append(dolfin.Point(r*cos(pi*i/(circle_points-1)),r*sin(pi*i/(circle_points-1))))
-	polygon.append(dolfin.Point(-r,0.))
+		polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[r*cos(pi*i/(circle_points-1)),r*sin(pi*i/(circle_points-1))]),circle_to_ellipse_y(a0,a1,[r*cos(pi*i/(circle_points-1)),r*sin(pi*i/(circle_points-1))])))
+	polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[-r,0.]),circle_to_ellipse_y(a0,a1,[-r,0.])))
 	return polygon
 
-def polygon_bottom(circle_points,r):
+def polygon_bottom(circle_points,r,a0,a1):
 	polygon = []
-	polygon.append(dolfin.Point(-r,0.))
+	polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[-r,0.]),circle_to_ellipse_y(a0,a1,[-r,0.])))
 	for i in range(1,circle_points-1):
-		polygon.append(dolfin.Point(-r*cos(pi*i/(circle_points-1)),-r*sin(pi*i/(circle_points-1))))
-	polygon.append(dolfin.Point(r,0.))
+		polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[-r*cos(pi*i/(circle_points-1)),-r*sin(pi*i/(circle_points-1))]),circle_to_ellipse_y(a0,a1,[-r*cos(pi*i/(circle_points-1)),-r*sin(pi*i/(circle_points-1))])))
+	polygon.append(dolfin.Point(circle_to_ellipse_x(a0,a1,[r,0.]),circle_to_ellipse_y(a0,a1,[r,0.])))
 	return polygon
 
-# transformations on the boundaries
-def_ell_x = 'sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))*x[0]'
-def_ell_y = 'sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))*x[1]'
-def_ell_quer = '(((L-abs(x[0]))/(L-r))*sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))+((abs(x[0])-r)/(L-r)))*x[0]'
 
-
-#                                               input parameters, edges, bc, domains                                          
+#                                               input parameters, edges, domains                                          
 
 # input parameters for computational domain
-circle_points = 15
+circle_points = 35
 r = 0.5
 L = 1.1
-resolution = 80
-alpha=[1.8,0.5*pi]
+resolution = 40
+vek10 = Constant((1.,0.))
+alpha=[1.5,0.3*pi]
 
 
 # input edges
@@ -144,43 +156,16 @@ left_bottom = edgeinput([dolfin.Point(-L,0.),dolfin.Point(-L, -L)],Expression(('
 left_top = edgeinput([dolfin.Point(-L,L),dolfin.Point(-L, 0.)],Expression(('x[0]','x[1]'),degree=1))
 right_bottom = edgeinput([dolfin.Point(L, -L),dolfin.Point(L,0.)],Expression(('x[0]','x[1]'),degree=1))
 right_top = edgeinput([dolfin.Point(L,0),dolfin.Point(L, L)],Expression(('x[0]','x[1]'),degree=1))
-left = edgeinput([dolfin.Point(-L,0.),dolfin.Point(-r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=alpha[0],a1=alpha[1],r=r,L=L))
-right = edgeinput([dolfin.Point(L,0.),dolfin.Point(r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=alpha[0],a1=alpha[1],r=r,L=L))
+left = edgeinput([dolfin.Point(-L,0.),dolfin.Point(circle_to_ellipse_x(alpha[0],alpha[1],[-r,0.]),circle_to_ellipse_y(alpha[0],alpha[1],[-r,0.]))],Expression(('x[0]','x[1]'),degree=1))
+right = edgeinput([dolfin.Point(L,0.),dolfin.Point(circle_to_ellipse_x(alpha[0],alpha[1],[r,0.]),circle_to_ellipse_y(alpha[0],alpha[1],[r,0.]))],Expression(('x[0]','x[1]'),degree=1))
 bottom = edgeinput([dolfin.Point(-L,-L ),dolfin.Point(L,-L)],Expression(('x[0]','x[1]'),degree=1))
 top = edgeinput([dolfin.Point(L,L ),dolfin.Point(-L,L)],Expression(('x[0]','x[1]'),degree=1))
-circle_top = edgeinput(polygon_top(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=alpha[0],a1=alpha[1]))
-circle_bottom = edgeinput(polygon_bottom(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=alpha[0],a1=alpha[1]))
+circle_top = edgeinput(polygon_top(circle_points,r,alpha[0],alpha[1]),Expression(('x[0]','x[1]'),degree=1))
+circle_bottom = edgeinput(polygon_bottom(circle_points,r,alpha[0],alpha[1]),Expression(('x[0]','x[1]'),degree=1))
 
 # define a vector with the edges
 edges = [left_bottom,left_top,right_bottom,right_top,left,right,bottom,top,circle_top,circle_bottom]
 edges_number = len(edges)
-
-
-# define the boundary conditions
-def boundary_left_bottom(x, on_boundary):
-	return on_polygon(x,left_bottom)
-def boundary_left_top(x, on_boundary):
-	return on_polygon(x,left_top)
-def boundary_right_bottom(x, on_boundary):
-	return on_polygon(x,right_bottom)
-def boundary_right_top(x, on_boundary):
-	return on_polygon(x,right_top)
-def boundary_left(x, on_boundary):
-	return on_polygon(x,left)
-def boundary_right(x, on_boundary):
-	return on_polygon(x,right)
-def boundary_bottom(x, on_boundary):
-	return on_polygon(x,bottom)
-def boundary_top(x, on_boundary):
-	return on_polygon(x,top)
-def boundary_circle_top(x, on_boundary):
-	return on_polygon(x,circle_top)
-def boundary_circle_bottom(x, on_boundary):
-	return on_polygon(x,circle_bottom)
-
-# define a vector with the boundary conditions
-boundary_edges = [boundary_left_bottom,boundary_left_top,boundary_right_bottom,boundary_right_top,boundary_left,boundary_right,boundary_bottom,boundary_top,boundary_circle_top,boundary_circle_bottom]
-
 
 
 # define the complete domain
@@ -221,30 +206,40 @@ def sudom_fct (sudom_arr, vals, fctspace):
 
 chi_a = sudom_fct (sudom_arr, [0,0,0,1], X)
 
-# create the function space
-W = VectorFunctionSpace(mesh, 'P', 1)
 
-# define dirichlet BC
-bcs = []
-for i in range(0,edges_number):
-	bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
-	bcs.append(bc)
+# Sub domain for Periodic boundary condition
+class PeriodicBoundary(SubDomain):
 
+	# Left boundary is "target domain" G
+	def inside(self, x, on_boundary):
+		return bool(x[1] < -1.1+tol and x[1] > -1.1-tol and on_boundary)
+
+	# Map top boundary (H) to bottom boundary (G)
+	def map(self, x, y):
+		y[0] = x[0]
+		y[1] = x[1] - 2.2
+
+
+# define function space with periodic boundary
+V = FunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
+W = VectorFunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 
 # compute the deformation u
-u=Function(W)
-v=TestFunction(W)
-a = inner(grad(u),grad(v)) *dx
-L = 0
-solve(a == L, u, bcs)
+u=Function(V)
+v=TestFunction(V)
+energy = ((grad(u))-chi_a*vek10)**2 *dx
+a = derivative(energy,u,v)
+L=0
+# Compute solution
+solve(a - L == 0, u)
+print ("energie: ", assemble(((grad(u))-chi_a*vek10)**2 *dx))
 
-# compute the displacement
-id = project(Identity(),W)
-displacement = project(u-id,W)
 
-
-# safe displacement
-vtkfile = File('deformation_circle/const.pvd')
+# save output
+vtkfile = File('ellipse_grid/chi_a.pvd')
 vtkfile << chi_a
-vtkfile = File('deformation_circle/displacement.pvd')
-vtkfile << displacement
+vtkfile = File('ellipse_grid/gradient.pvd')
+gradu = project(grad(u),W)
+vtkfile << gradu
+vtkfile = File('ellipse_grid/solution.pvd')
+vtkfile << u

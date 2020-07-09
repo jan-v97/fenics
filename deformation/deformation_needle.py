@@ -105,16 +105,16 @@ subdomain_number = len(subdomains)
 
 # domain_left.print()
 
-print('domain_left: ')
-domain_left.printpolygon()
-print('domain_mid_top: ')
-domain_mid_top.printpolygon()
-print('domain_mid_bottom: ')
-domain_mid_bottom.printpolygon()
-print('domain_right_top: ')
-domain_right_top.printpolygon()
-print('domain_right_bottom: ')
-domain_right_bottom.printpolygon()
+#print('domain_left: ')
+#domain_left.printpolygon()
+#print('domain_mid_top: ')
+#domain_mid_top.printpolygon()
+#print('domain_mid_bottom: ')
+#domain_mid_bottom.printpolygon()
+#print('domain_right_top: ')
+#domain_right_top.printpolygon()
+#print('domain_right_bottom: ')
+#domain_right_bottom.printpolygon()
 
 # defining the domain, and the subdomains
 domain = Polygon(domain_complete.get_polygon())
@@ -127,5 +127,5 @@ mesh = generate_mesh (domain, resolution)
 #Compute solution
 V = VectorFunctionSpace(mesh, 'P', 1)
 u = Function(V)
-vtkfile = File('grid/const.pvd')
+vtkfile = File('deformation_needle/const.pvd')
 vtkfile << u
