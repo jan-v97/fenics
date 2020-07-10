@@ -224,6 +224,11 @@ class PeriodicBoundary(SubDomain):
 V = FunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 W = VectorFunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 
+
+def dirichlet_point(x,on_boundary):
+	return on_boundary and  (x[0] < (-1.1+tol)) and (x[1] < (-1.1+(1.5/resolution)+tol))
+bc = DirichletBC(V,'0',dirichlet_point)
+
 # compute the deformation u
 u=Function(V)
 v=TestFunction(V)
@@ -231,7 +236,7 @@ energy = ((grad(u))-chi_a*vek10)**2 *dx
 a = derivative(energy,u,v)
 L=0
 # Compute solution
-solve(a - L == 0, u)
+solve(a - L == 0, u,bc)
 print ("energie: ", assemble(((grad(u))-chi_a*vek10)**2 *dx))
 
 

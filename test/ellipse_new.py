@@ -8,12 +8,13 @@ import numpy
 import dolfin.cpp.mesh
 
 tol= 1E-14
+L = 1.1
 r = 0.5
 resolution = 40
 alpha = [1.5,0.3*pi]
 
 # defining the geometry of the computational domain
-domain =   Rectangle(dolfin.Point(-1.1, -1.1), dolfin.Point(1.1, 1.1))
+domain =   Rectangle(dolfin.Point(-L, -L), dolfin.Point(L, L))
 domain2 =   Circle(dolfin.Point(0.,0.),r)
 domainouter =   Circle(dolfin.Point(0.,0.),1)
 domain0 = domain -domainouter
@@ -120,10 +121,15 @@ class PeriodicBoundary(SubDomain):
 		y[1] = x[1] - 2.2
 
 
+
+
 # define function space with periodic boundary
 V = FunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 W = VectorFunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 
+def dirichlet_point(x,on_boundary):
+	return on_boundary and  (x[0] < (-1.1+tol)) and (x[1] < (-1.1+(1.5/resolution)+tol))
+bc = DirichletBC(V,'0',dirichlet_point)
 
 a0 = Constant(alpha[0])
 a1 = Constant(alpha[1])
@@ -151,7 +157,7 @@ energy = (chi_inner_circle*(abs(det(grad(def_inner)))*((inv(grad(def_inner)).T*g
 a = derivative(energy,u,v)
 L=0
 # Compute solution
-solve(a - L == 0, u)
+solve(a - L == 0, u,bc)
 print ("energie: ", assemble((chi_inner_circle*(abs(det(grad(def_inner)))*((inv(grad(def_inner)).T*grad(u))-vek10)**2)+ chi_outer_circle*(abs(det(grad(def_outer)))*(inv(grad(def_outer)).T*grad(u))**2)+ chi_outside*(grad(u)**2)) *dx))
 
 

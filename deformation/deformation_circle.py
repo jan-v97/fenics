@@ -93,17 +93,6 @@ def on_polygon(x,edge):
 		#print ("( ", x0, " , ", y0, " ) ; ( ", x[0], " , ", x[1], " ) ; ( ", x1, " , ", y1, " )           return_val: ", result)
 	return False
 
-# define the identity
-class Identity(UserExpression):
-	def __init__(self, **kwargs):
-		super().__init__(**kwargs)
-
-	def eval_cell(self,values,x,cell):
-		values[0] = x[0]
-		values[1] = x[1]
-
-	def value_shape(self):
-		return (2,)
 
 
 # functions to approximate the circle by a polygon
@@ -136,7 +125,7 @@ circle_points = 15
 r = 0.5
 L = 1.1
 resolution = 80
-alpha=[1.8,0.5*pi]
+alpha=[1.3,0.3*pi]
 
 
 # input edges
@@ -239,7 +228,7 @@ L = 0
 solve(a == L, u, bcs)
 
 # compute the displacement
-id = project(Identity(),W)
+id = project(Identity(u.dim()),W)
 displacement = project(u-id,W)
 
 
