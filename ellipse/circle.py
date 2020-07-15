@@ -97,10 +97,10 @@ L=0
 solve(a - L == 0, u, bc)
 #Compute solution
 #u = Function(V)
-vtkfile = File('energy/G.pvd')
+vtkfile = File('circle/G.pvd')
 vtkfile << G
-vtkfile = File('energy/gradient.pvd')
+vtkfile = File('circle/gradient.pvd')
 gradu = project(grad(u),W)
 vtkfile << gradu
-vtkfile = File('energy/solution.pvd')
+vtkfile = File('circle/solution.pvd')
 vtkfile << u

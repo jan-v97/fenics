@@ -128,7 +128,7 @@ V = FunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 W = VectorFunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 
 def dirichlet_point(x,on_boundary):
-	return on_boundary and  (x[0] < (-1.1+tol)) and (x[1] < (-1.1+(1.5/resolution)+tol))
+	return on_boundary and  (x[0] < (-1.1+tol)) and (x[1] < (-1.1+(5.5/resolution)+tol))
 bc = DirichletBC(V,'0',dirichlet_point)
 
 a0 = Constant(alpha[0])

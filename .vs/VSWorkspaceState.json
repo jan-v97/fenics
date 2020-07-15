@@ -2,8 +2,9 @@
   "ExpandedNodes": [
     "",
     "\\deformation",
+    "\\ellipse",
     "\\test"
   ],
-  "SelectedNode": "\\deformation\\ellipse_grid.py",
+  "SelectedNode": "\\deformation\\deformation_circle.py",
   "PreviewInSolutionExplorer": false
 }
