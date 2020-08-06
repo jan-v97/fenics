@@ -1,0 +1,15 @@
+/tmp/tmpl51v0n73/dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8.cpp: In member function ‘virtual void dolfin::dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
+/tmp/tmpl51v0n73/dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8.cpp:61:48: error: ‘pr’ was not declared in this scope
+           values[0] = ((x[1]-0.25)/0.75)*(0.25-pr)+0.75+pr;
+                                                ^~
+/tmp/tmpl51v0n73/dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8.cpp:61:48: note: suggested alternative: ‘pi’
+           values[0] = ((x[1]-0.25)/0.75)*(0.25-pr)+0.75+pr;
+                                                ^~
+                                                pi
+/tmp/tmpl51v0n73/dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8.cpp:62:48: error: ‘pt’ was not declared in this scope
+           values[1] = ((x[1]-0.25)/0.75)*(0.75-pt)+0.25+pt;
+                                                ^~
+/tmp/tmpl51v0n73/dolfin_expression_e414f15ab6c993b1292f7d38a06af3f8.cpp:62:48: note: suggested alternative: ‘pi’
+           values[1] = ((x[1]-0.25)/0.75)*(0.75-pt)+0.25+pt;
+                                                ^~
+                                                pi

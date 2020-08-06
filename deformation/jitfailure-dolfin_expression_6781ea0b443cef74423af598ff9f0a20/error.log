@@ -1,0 +1,11 @@
+/tmp/tmptsmut1_q/dolfin_expression_6781ea0b443cef74423af598ff9f0a20.cpp: In member function ‘virtual void dolfin::dolfin_expression_6781ea0b443cef74423af598ff9f0a20::eval(Eigen::Ref<Eigen::Matrix<double, -1, 1> >, Eigen::Ref<const Eigen::Matrix<double, -1, 1> >) const’:
+/tmp/tmptsmut1_q/dolfin_expression_6781ea0b443cef74423af598ff9f0a20.cpp:63:44: error: expression cannot be used as a function
+           values[0] = x[0]((x[1]-0.25)/(L1))*delta_t;
+                                            ^
+/tmp/tmptsmut1_q/dolfin_expression_6781ea0b443cef74423af598ff9f0a20.cpp: In member function ‘virtual double dolfin::dolfin_expression_6781ea0b443cef74423af598ff9f0a20::get_property(std::__cxx11::string) const’:
+/tmp/tmptsmut1_q/dolfin_expression_6781ea0b443cef74423af598ff9f0a20.cpp:76:11: warning: this ‘if’ clause does not guard... [-Wmisleading-indentation]
+           if (name == "delta_t") return delta_t;          if (name == "L1") return L1;
+           ^~
+/tmp/tmptsmut1_q/dolfin_expression_6781ea0b443cef74423af598ff9f0a20.cpp:76:59: note: ...this statement, but the latter is misleadingly indented as if it were guarded by the ‘if’
+           if (name == "delta_t") return delta_t;          if (name == "L1") return L1;
+                                                           ^~

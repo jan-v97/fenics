@@ -118,13 +118,26 @@ def_ell_y = 'sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin
 def_ell_quer = '(((L-abs(x[0]))/(L-r))*sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))+((abs(x[0])-r)/(L-r)))*x[0]'
 
 
+
+	
+class Identity(UserExpression):
+	def __init__(self, **kwargs):
+		super().__init__(**kwargs)
+
+	def eval_cell(self,values,x,cell):
+		values[0] = x[0]
+		values[1] = x[1]
+
+	def value_shape(self):
+		return (2,)
+
 #                                               input parameters, edges, bc, domains                                          
 
 # input parameters for computational domain
 circle_points = 15
 r = 0.5
 L = 1.1
-resolution = 80
+resolution = 20
 alpha=[1.3,0.3*pi]
 
 
@@ -228,7 +241,7 @@ L = 0
 solve(a == L, u, bcs)
 
 # compute the displacement
-id = project(Identity(u.dim()),W)
+id = project(Identity(),W)
 displacement = project(u-id,W)
 
 
