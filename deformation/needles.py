@@ -120,6 +120,8 @@ class Identity(UserExpression):
 # input parameters for computational domain
 L1 = 2.
 L2 = 2.
+theta_t = 0.6
+theta_r = 0.4
 resolution = 40
 
 #parameters for the deformation
@@ -130,7 +132,7 @@ delta_r = 0.1
 Lt = 3.
 Lr = 2.5
 #displacement of midpoint
-pt = 0.05
+pt = -0.1
 pr = 0.1
 #quadratic parameters
 tc1 = -0.15
@@ -144,20 +146,20 @@ tbl = 0.2
 # input edges
 lt = edgeinput([dolfin.Point(0., 0.25+L1+L2),dolfin.Point(0., -0.75+L1)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
 lb = edgeinput([dolfin.Point(0., -0.75+L1),dolfin.Point(0., 0.)],Expression(('tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))+(delta_t-tlb)*((x[1])/(L1-0.75))','((x[1])/(L1-0.75))*(Lt-0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tlb=tlb))
-tl = edgeinput([dolfin.Point(0.5, 0.25+L1+L2),dolfin.Point(0., 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-tr = edgeinput([dolfin.Point(1., 0.25+L1+L2),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-mt = edgeinput([dolfin.Point(0.5, 0.25+L1),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+tl = edgeinput([dolfin.Point(1-theta_t, 0.25+L1+L2),dolfin.Point(0., 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+tr = edgeinput([dolfin.Point(1., 0.25+L1+L2),dolfin.Point(1-theta_t, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+mt = edgeinput([dolfin.Point(1-theta_t, 0.25+L1),dolfin.Point(1-theta_t, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
 lt2 = edgeinput([dolfin.Point(1., 0.25+L1),dolfin.Point(1., 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
 lb2 = edgeinput([dolfin.Point(1., 1.),dolfin.Point(1., 0.25+L1)],Expression(('tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))+(delta_t-tlb)*((x[1]-1.)/(L1-0.75))+1.','((x[1]-1.)/(L1-0.75))*(Lt-0.75)+1'),degree=1,delta_t=delta_t,L1=L1,Lt=Lt,tlb=tlb))
-c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(0.5, 0.25+L1)],Expression(('tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))+(delta_t-0.25-pr-tc4)*((x[1]-0.25)/(L1))+0.75+pr','((x[1]-0.25)/(L1))*(Lt-pt)+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc4=tc4))
+c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1-theta_t, 0.25+L1)],Expression(('tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))+(0.5-theta_t+delta_t-0.25-pr-tc4)*((x[1]-0.25)/(L1))+0.75+pr','((x[1]-0.25)/(L1))*(Lt-pt)+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc4=tc4,theta_t=theta_t))
 c3 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1., 1.)],Expression(('tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)+(0.25-pr-tc3)*((x[1]-0.25)/0.75)+0.75+pr','((x[1]-0.25)/0.75)*(0.75-pt)+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc3=tc3))
-c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, 0.25)],Expression(('((x[0]-0.75)/(L1-0.75))*(Lr-0.75-pr)+0.75+pr','tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))+(delta_r-pt-tc2)*((x[0]-0.75)/(L1-0.75))+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc2=tc2))
+c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, theta_r-0.25)],Expression(('((x[0]-0.75)/(L1-0.75))*(Lr-0.75-pr)+0.75+pr','tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))+(theta_r-0.5+delta_r-pt-tc2)*((x[0]-0.75)/(L1-0.75))+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc2=tc2,theta_r=theta_r))
 c1 = edgeinput([dolfin.Point(0., 0.),dolfin.Point(0.75, 0.25)],Expression(('(x[0]/0.75)*(0.75+pr)','tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc1=tc1))
 bl = edgeinput([dolfin.Point(0., 0.),dolfin.Point(L1, -0.25)],Expression(('(x[0]/L1)*(Lr)','tbl*(x[0]/L1)*(x[0]/L1)+(-0.25+delta_r-tbl)*(x[0]/L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl))
 br = edgeinput([dolfin.Point(L1, -0.25),dolfin.Point(L1+L2, -0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-mr = edgeinput([dolfin.Point(L1, 0.25),dolfin.Point(L1+L2, 0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2, 0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-rt = edgeinput([dolfin.Point(L1+L2, 0.25),dolfin.Point(L1+L2, 0.75)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+mr = edgeinput([dolfin.Point(L1, theta_r-0.25),dolfin.Point(L1+L2, theta_r-0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2, theta_r-0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
+rt = edgeinput([dolfin.Point(L1+L2, theta_r-0.25),dolfin.Point(L1+L2, 0.75)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
 br2 = edgeinput([dolfin.Point(L1+L2, 0.75),dolfin.Point(1+L1, 0.75)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
 bl2 = edgeinput([dolfin.Point(1+L1, 0.75),dolfin.Point(1., 1.)],Expression(('((x[0]-1.)/L1)*(Lr)+1.','tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)+(-0.25+delta_r-tbl)*((x[0]-1.)/L1)+1.'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl))
 
