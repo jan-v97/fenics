@@ -139,6 +139,8 @@ r = 0.5
 L = 1.1
 resolution = 20
 alpha=[1.3,0.3*pi]
+a0 = variable(alpha[0])
+a1 = variable(alpha[1])
 
 
 # input edges
@@ -146,12 +148,12 @@ left_bottom = edgeinput([dolfin.Point(-L,0.),dolfin.Point(-L, -L)],Expression(('
 left_top = edgeinput([dolfin.Point(-L,L),dolfin.Point(-L, 0.)],Expression(('x[0]','x[1]'),degree=1))
 right_bottom = edgeinput([dolfin.Point(L, -L),dolfin.Point(L,0.)],Expression(('x[0]','x[1]'),degree=1))
 right_top = edgeinput([dolfin.Point(L,0),dolfin.Point(L, L)],Expression(('x[0]','x[1]'),degree=1))
-left = edgeinput([dolfin.Point(-L,0.),dolfin.Point(-r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=alpha[0],a1=alpha[1],r=r,L=L))
-right = edgeinput([dolfin.Point(L,0.),dolfin.Point(r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=alpha[0],a1=alpha[1],r=r,L=L))
+left = edgeinput([dolfin.Point(-L,0.),dolfin.Point(-r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=a0,a1=a1,r=r,L=L))
+right = edgeinput([dolfin.Point(L,0.),dolfin.Point(r, 0.)],Expression((def_ell_quer,'x[1]'),degree=1,a0=a0,a1=a1,r=r,L=L))
 bottom = edgeinput([dolfin.Point(-L,-L ),dolfin.Point(L,-L)],Expression(('x[0]','x[1]'),degree=1))
 top = edgeinput([dolfin.Point(L,L ),dolfin.Point(-L,L)],Expression(('x[0]','x[1]'),degree=1))
-circle_top = edgeinput(polygon_top(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=alpha[0],a1=alpha[1]))
-circle_bottom = edgeinput(polygon_bottom(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=alpha[0],a1=alpha[1]))
+circle_top = edgeinput(polygon_top(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=a0,a1=a1))
+circle_bottom = edgeinput(polygon_bottom(circle_points,r),Expression((def_ell_x,def_ell_y),degree=1,a0=a0,a1=a1))
 
 # define a vector with the edges
 edges = [left_bottom,left_top,right_bottom,right_top,left,right,bottom,top,circle_top,circle_bottom]
@@ -182,6 +184,19 @@ def boundary_circle_bottom(x, on_boundary):
 
 # define a vector with the boundary conditions
 boundary_edges = [boundary_left_bottom,boundary_left_top,boundary_right_bottom,boundary_right_top,boundary_left,boundary_right,boundary_bottom,boundary_top,boundary_circle_top,boundary_circle_bottom]
+
+
+# Sub domain for Periodic boundary condition
+class PeriodicBoundary(SubDomain):
+
+	# Left boundary is "target domain" G
+	def inside(self, x, on_boundary):
+		return bool(x[1] < -1.1+tol and x[1] > -1.1-tol and on_boundary)
+
+	# Map top boundary (H) to bottom boundary (G)
+	def map(self, x, y):
+		y[0] = x[0]
+		y[1] = x[1] - 2.2
 
 
 
@@ -225,6 +240,7 @@ chi_a = sudom_fct (sudom_arr, [0,0,0,1], X)
 
 # create the function space
 W = VectorFunctionSpace(mesh, 'P', 1)
+V = FunctionSpace(mesh, 'P', 1,constrained_domain=PeriodicBoundary())
 
 # define dirichlet BC
 bcs = []
@@ -233,16 +249,34 @@ for i in range(0,edges_number):
 	bcs.append(bc)
 
 
-# compute the deformation u
-u=Function(W)
-v=TestFunction(W)
-a = inner(grad(u),grad(v)) *dx
+# compute the deformation phi
+phi=Function(W)
+psi=TestFunction(W)
+a1 = inner(grad(phi),grad(psi)) *dx
 L = 0
-solve(a == L, u, bcs)
+solve(a1 == L, phi, bcs)
+
+
+u=Function(V)
+v=TestFunction(V)
+vek10 = Constant((1.,0.))
+energy = ((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx
+a = derivative(energy,u,v)
+L=0
+# Compute solution
+solve(a - L == 0, u)
+print ("energie: ", assemble(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx))
+#print ("shape derivative a0: ", assemble(derivative(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx,a0)))
+#print ("shape derivative a1: ", assemble(derivative(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx,a1)))
+
+
+
+
+
 
 # compute the displacement
 id = project(Identity(),W)
-displacement = project(u-id,W)
+displacement = project(phi-id,W)
 
 
 # safe displacement
@@ -250,3 +284,8 @@ vtkfile = File('deformation_circle/const.pvd')
 vtkfile << chi_a
 vtkfile = File('deformation_circle/displacement.pvd')
 vtkfile << displacement
+vtkfile = File('deformation_circle/solution.pvd')
+vtkfile << u
+vtkfile = File('deformation_circle/gradient.pvd')
+gradu = project((inv(grad(phi)).T)*grad(u),W)
+vtkfile << gradu
