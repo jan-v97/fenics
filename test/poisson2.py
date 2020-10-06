@@ -9,7 +9,7 @@ V = FunctionSpace(mesh, 'P', 1)
 # Define boundary condition
 u_D = Expression('1', degree=1)
 def boundary(x, on_boundary):
-    return on_boundary
+	return on_boundary
 bc = DirichletBC(V, u_D, boundary)
 
 # Define variational problem

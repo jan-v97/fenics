@@ -122,6 +122,7 @@ L1 = 2.
 L2 = 2.
 theta_t = 0.6
 theta_r = 0.4
+phi = 0.05*pi
 resolution = 40
 
 #parameters for the deformation
@@ -142,26 +143,42 @@ tc4 = 0.4
 tlb = -0.2
 tbl = 0.2
 
+#calculations
+rho = cos(0.5*pi-atan(1./3.)-2*phi)*sqrt(0.75*0.75+0.25*0.25)
+hr = cos(phi)-sin(phi)
+cos2phi = cos(2*phi)
+sin2phi = sin(2*phi)
+cosphi = cos(phi)
+sinphi = sin(phi)
+
+
+#cosphi+sinphi  ;  cosphi-sinphi
+#0.75+pr  ;  0.25+pt
+#((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  ;  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi
+#Lr  ;  0.5*hr*theta_r+delta_r
+#Lr  ;  -0.5*hr*theta_r+delta_r
+#Lr+cosphi+sinphi  ;  (1-0.5*theta_r)*hr+delta_r
+
 
 # input edges
-lt = edgeinput([dolfin.Point(0., 0.25+L1+L2),dolfin.Point(0., -0.75+L1)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-lb = edgeinput([dolfin.Point(0., -0.75+L1),dolfin.Point(0., 0.)],Expression(('tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))+(delta_t-tlb)*((x[1])/(L1-0.75))','((x[1])/(L1-0.75))*(Lt-0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tlb=tlb))
-tl = edgeinput([dolfin.Point(1-theta_t, 0.25+L1+L2),dolfin.Point(0., 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-tr = edgeinput([dolfin.Point(1., 0.25+L1+L2),dolfin.Point(1-theta_t, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-mt = edgeinput([dolfin.Point(1-theta_t, 0.25+L1),dolfin.Point(1-theta_t, 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-lt2 = edgeinput([dolfin.Point(1., 0.25+L1),dolfin.Point(1., 0.25+L1+L2)],Expression(('x[0]+delta_t','x[1]+(Lt-L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-lb2 = edgeinput([dolfin.Point(1., 1.),dolfin.Point(1., 0.25+L1)],Expression(('tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))+(delta_t-tlb)*((x[1]-1.)/(L1-0.75))+1.','((x[1]-1.)/(L1-0.75))*(Lt-0.75)+1'),degree=1,delta_t=delta_t,L1=L1,Lt=Lt,tlb=tlb))
-c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1-theta_t, 0.25+L1)],Expression(('tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))+(0.5-theta_t+delta_t-0.25-pr-tc4)*((x[1]-0.25)/(L1))+0.75+pr','((x[1]-0.25)/(L1))*(Lt-pt)+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc4=tc4,theta_t=theta_t))
-c3 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1., 1.)],Expression(('tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)+(0.25-pr-tc3)*((x[1]-0.25)/0.75)+0.75+pr','((x[1]-0.25)/0.75)*(0.75-pt)+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc3=tc3))
-c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, theta_r-0.25)],Expression(('((x[0]-0.75)/(L1-0.75))*(Lr-0.75-pr)+0.75+pr','tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))+(theta_r-0.5+delta_r-pt-tc2)*((x[0]-0.75)/(L1-0.75))+0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc2=tc2,theta_r=theta_r))
-c1 = edgeinput([dolfin.Point(0., 0.),dolfin.Point(0.75, 0.25)],Expression(('(x[0]/0.75)*(0.75+pr)','tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc1=tc1))
-bl = edgeinput([dolfin.Point(0., 0.),dolfin.Point(L1, -0.25)],Expression(('(x[0]/L1)*(Lr)','tbl*(x[0]/L1)*(x[0]/L1)+(-0.25+delta_r-tbl)*(x[0]/L1)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl))
-br = edgeinput([dolfin.Point(L1, -0.25),dolfin.Point(L1+L2, -0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-mr = edgeinput([dolfin.Point(L1, theta_r-0.25),dolfin.Point(L1+L2, theta_r-0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2, theta_r-0.25)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-rt = edgeinput([dolfin.Point(L1+L2, theta_r-0.25),dolfin.Point(L1+L2, 0.75)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-br2 = edgeinput([dolfin.Point(L1+L2, 0.75),dolfin.Point(1+L1, 0.75)],Expression(('x[0]+(Lr-L1)','x[1]+delta_r'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr))
-bl2 = edgeinput([dolfin.Point(1+L1, 0.75),dolfin.Point(1., 1.)],Expression(('((x[0]-1.)/L1)*(Lr)+1.','tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)+(-0.25+delta_r-tbl)*((x[0]-1.)/L1)+1.'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl))
+lt = edgeinput([dolfin.Point(0., 0.25+L1+L2),dolfin.Point(0., -0.75+L1)],Expression(('((x[1]-(0.25+L1+L2))/(-L2-1.))  *   (  (rho+Lt)*sin2phi+(delta_t+hr)*cos2phi-cosphi-sinphi  -  ((rho+Lt+L2)*sin2phi+delta_t*cos2phi))  +  (rho+Lt+L2)*sin2phi+delta_t*cos2phi','((x[1]-(0.25+L1+L2))/(-L2-1.))  *   (  (rho+Lt)*cos2phi-(delta_t+hr)*sin2phi-cosphi+sinphi  -  ((rho+Lt+L2)*cos2phi-delta_t*sin2phi))  +  (rho+Lt+L2)*cos2phi-delta_t*sin2phi'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+lb = edgeinput([dolfin.Point(0., -0.75+L1),dolfin.Point(0., 0.)],Expression(('tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))  +  ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi-cosphi-sinphi-tlb)  *  ((x[1])/(L1-0.75))','((x[1])/(L1-0.75))*((rho+Lt)*cos2phi-(delta_t+hr)*sin2phi-cosphi+sinphi)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tlb=tlb,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+tl = edgeinput([dolfin.Point(0.5, 0.25+L1+L2),dolfin.Point(0., 0.25+L1+L2)],Expression(('(x[0]/0.5)  *  (  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  ((rho+Lt+L2)*sin2phi+delta_t*cos2phi))  +  ((rho+Lt+L2)*sin2phi+delta_t*cos2phi)','(x[0]/0.5)  *   (  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)  -  ((rho+Lt+L2)*cos2phi-delta_t*sin2phi))  +  (rho+Lt+L2)*cos2phi-delta_t*sin2phi'),degree=1,delta_t=delta_t,delta_r=delta_r,theta_t=theta_t,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+tr = edgeinput([dolfin.Point(1., 0.25+L1+L2),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('((x[0]-0.5)/0.5)  *  (  (rho+Lt+L2)*sin2phi+(delta_t+hr)*cos2phi  -  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  )  +  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)','((x[0]-0.5)/0.5)  *  (  ((rho+Lt+L2)*cos2phi-(delta_t+hr)*sin2phi)  -  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi))  +  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)'),degree=1,delta_t=delta_t,theta_t=theta_t,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+mt = edgeinput([dolfin.Point(0.5, 0.25+L1),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('((x[1]-(0.25+L1+L2))/(-L2))  *   (  ((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi))  +  (rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi','((x[1]-(0.25+L1+L2))/(-L2))  *   (  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi  -  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi))  +  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)'),degree=1,delta_t=delta_t,theta_t=theta_t,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+lt2 = edgeinput([dolfin.Point(1., 0.25+L1),dolfin.Point(1., 0.25+L1+L2)],Expression(('((x[1]-(0.25+L1+L2))/(-L2))  *   (  ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi)  -  ((rho+Lt+L2)*sin2phi+(delta_t+hr)*cos2phi))  +  (rho+Lt+L2)*sin2phi+(delta_t+hr)*cos2phi','((x[1]-(0.25+L1+L2))/(-L2))  *   (  (rho+Lt)*cos2phi-(delta_t+hr)*sin2phi  -  ((rho+Lt+L2)*cos2phi-(delta_t+hr)*sin2phi)  )  +  ((rho+Lt+L2)*cos2phi-(delta_t+hr)*sin2phi)'),degree=1,delta_t=delta_t,L2=L2,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+lb2 = edgeinput([dolfin.Point(1., 1.),dolfin.Point(1., 0.25+L1)],Expression(('tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))   +   ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi  -  (cosphi+sinphi)  -tlb)*((x[1]-1.)/(L1-0.75))  +  cosphi+sinphi','((x[1]-1.)/(L1-0.75))  *  ((rho+Lt)*cos2phi-(delta_t+hr)*sin2phi  -  (cosphi-sinphi))  +  cosphi-sinphi'),degree=1,delta_t=delta_t,L1=L1,Lt=Lt,tlb=tlb,rho=rho,hr=hr,cos2phi=cos2phi,L2=L2,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(0.5, 0.25+L1)],Expression(('tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))  +  (((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  (0.75+pr)  -  tc4)*((x[1]-0.25)/(L1))  +  0.75+pr','((x[1]-0.25)/(L1))  *  (  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi  -  (0.25+pt)  )  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc4=tc4,theta_t=theta_t,L2=L2,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+c3 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1., 1.)],Expression(('tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)  +  (cosphi+sinphi  -  (0.75+pr)  -  tc3)*((x[1]-0.25)/0.75)  +  0.75+pr','((x[1]-0.25)/0.75)  *  (  cosphi-sinphi  -  (0.25+pt)  )  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc3=tc3,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, 0.25)],Expression(('((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr','tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.5*hr*theta_r+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc2=tc2,theta_r=theta_r,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+c1 = edgeinput([dolfin.Point(0., 0.),dolfin.Point(0.75, 0.25)],Expression(('(x[0]/0.75)*(0.75+pr)','tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc1=tc1,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+bl = edgeinput([dolfin.Point(0., 0.),dolfin.Point(L1, -0.25)],Expression(('(x[0]/L1)*(Lr)','tbl*(x[0]/L1)*(x[0]/L1)  +  (-0.5*hr*theta_r+delta_r  -  tbl)*(x[0]/L1)'),degree=1,theta_r=theta_r,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+br = edgeinput([dolfin.Point(L1, -0.25),dolfin.Point(L1+L2, -0.25)],Expression(('x[0]+(Lr-L1)','-0.5*hr*theta_r+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+mr = edgeinput([dolfin.Point(L1, 0.25),dolfin.Point(L1+L2, 0.25)],Expression(('x[0]+(Lr-L1)','0.5*hr*theta_r+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
+rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2, 0.25)],Expression(('x[0]+(Lr-L1)','((x[1]+0.25)/(0.5))  *  (0.5*hr*theta_r+delta_r  - (-0.5*hr*theta_r+delta_r))  - 0.5*hr*theta_r+delta_r '),degree=1,delta_t=delta_t,delta_r=delta_r,theta_r=theta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+rt = edgeinput([dolfin.Point(L1+L2, 0.25),dolfin.Point(L1+L2, 0.75)],Expression(('x[0]+(Lr-L1)','((x[1]-0.25)/(0.5))  *  ((1-0.5*theta_r)*hr+delta_r  - (0.5*hr*theta_r+delta_r))  + 0.5*hr*theta_r+delta_r '),degree=1,delta_t=delta_t,delta_r=delta_r,theta_r=theta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+br2 = edgeinput([dolfin.Point(L1+L2, 0.75),dolfin.Point(1+L1, 0.75)],Expression(('x[0]+(Lr-L1)','(1-0.5*theta_r)*hr+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,L2=L2,cosphi=cosphi,sinphi=sinphi))
+bl2 = edgeinput([dolfin.Point(1+L1, 0.75),dolfin.Point(1., 1.)],Expression(('((x[0]-1.)/L1)*(Lr)+cosphi+sinphi','tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  ((1-0.5*theta_r)*hr+delta_r  -  (cosphi-sinphi)  -  tbl)*((x[0]-1.)/L1)  +  cosphi-sinphi'),degree=1,delta_t=delta_t,L2=L2,delta_r=delta_r,theta_r=theta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
 
 # define a vector with the edges
 edges = [lt,lb,tl,tr,mt,lt2,lb2,c4,c3,c2,c1,bl,br,mr,rb,rt,br2,bl2]

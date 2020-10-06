@@ -3,8 +3,9 @@
     "",
     "\\deformation",
     "\\ellipse",
-    "\\test"
+    "\\test",
+    "\\test\\poisson2"
   ],
-  "SelectedNode": "\\deformation\\deformation_circle.py",
+  "SelectedNode": "\\deformation\\needles.py",
   "PreviewInSolutionExplorer": false
 }
