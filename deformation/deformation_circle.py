@@ -262,13 +262,13 @@ v=TestFunction(V)
 vek10 = Constant((1.,0.))
 energy = ((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx
 a = derivative(energy,u,v)
+Euu = derivative(a,u,v)
 L=0
 # Compute solution
 solve(a - L == 0, u)
 print ("energie: ", assemble(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx))
-#print ("shape derivative a0: ", assemble(derivative(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx,a0)))
-#print ("shape derivative a1: ", assemble(derivative(((abs(det(grad(phi)))*((inv(grad(phi)).T*grad(u))-(chi_a*vek10))**2)) * dx,a1)))
-
+p = Function(V)
+Lagrange = energy - a*p
 
 
 
