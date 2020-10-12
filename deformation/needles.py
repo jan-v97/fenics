@@ -95,15 +95,6 @@ def on_polygon(x,edge):
 
 
 
-
-# transformations on the boundaries
-def_ell_x = 'sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))*x[0]'
-def_ell_y = 'sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))*x[1]'
-def_ell_quer = '(((L-abs(x[0]))/(L-r))*sqrt(a0*a0*pow(cos(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)+pow(sin(atan(a0*a0*tan(atan2(x[1],x[0])-a1))),2)/(a0*a0))+((abs(x[0])-r)/(L-r)))*x[0]'
-
-
-
-	
 class Identity(UserExpression):
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
