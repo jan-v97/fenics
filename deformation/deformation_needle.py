@@ -125,8 +125,8 @@ delta = 0.2
 # parameters for the shape optimization
 Delta = 0.05
 Ln2 = 2.
-ab = 0.05
-at = 0.05
+ab = 0.15
+at = -0.15
 
 # calculations
 cosdt = cos(atan2(delta*theta,1.))
@@ -134,18 +134,18 @@ sindt = sin(atan2(delta*theta,1.))
 
 # input edges
 edge_number = 14
-top_left = edgeinput([dolfin.Point(0.,1.0),dolfin.Point(-Ll, 1.0)],Expression(('x[0]-sindt','x[1]+cosdt-1.'),degree=1,sindt=sindt,cosdt=cosdt))
-top_mid = edgeinput([dolfin.Point(Ln,1-0.5*theta),dolfin.Point(0., 1.)],Expression(('x[0]','x[1]'),degree=1))
-top_right = edgeinput([dolfin.Point(Ln+Lr,1-0.5*theta),dolfin.Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'),degree=1))
-right_top = edgeinput([dolfin.Point(Ln+Lr,0.5*theta),dolfin.Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'),degree=1))
-right_bottom = edgeinput([dolfin.Point(Ln+Lr,-0.5*theta),dolfin.Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'),degree=1))
-mid_right = edgeinput([dolfin.Point(Ln,0.5*theta ),dolfin.Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'),degree=1))
-mid_left = edgeinput([dolfin.Point(0.,0.),dolfin.Point(0., 1.)],Expression(('-x[1]*sindt','x[1]*cosdt'),degree=1,sindt=sindt,cosdt=cosdt))
-mid_bottom = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'),degree=1))
-left = edgeinput([dolfin.Point(-Ll,1.),dolfin.Point(-Ll, 0.)],Expression(('x[0]-x[1]*sindt','x[1]*cosdt'),degree=1,sindt=sindt,cosdt=cosdt))
-bottom_left = edgeinput([dolfin.Point(-Ll,0.),dolfin.Point(0., 0.)],Expression(('x[0]','x[1]'),degree=1))
-bottom_mid = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'),degree=1))
-bottom_right = edgeinput([dolfin.Point(Ln,-0.5*theta ),dolfin.Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'),degree=1))
+top_left = edgeinput([dolfin.Point(0.,1.0),dolfin.Point(-Ll, 1.0)],Expression(('x[0]-sindt','1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+top_mid = edgeinput([dolfin.Point(Ln,1-0.5*theta),dolfin.Point(0., 1.)],Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+top_right = edgeinput([dolfin.Point(Ln+Lr,1-0.5*theta),dolfin.Point(Ln, 1-0.5*theta)],Expression(('x[0] + Ln2-Ln - (1.-theta+Delta) * sindt','1. - theta + Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+right_top = edgeinput([dolfin.Point(Ln+Lr,0.5*theta),dolfin.Point(Ln+Lr, 1.-0.5*theta)],Expression(('((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+right_bottom = edgeinput([dolfin.Point(Ln+Lr,-0.5*theta),dolfin.Point(Ln+Lr, 0.5*theta)],Expression(('((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+mid_right = edgeinput([dolfin.Point(Ln,0.5*theta ),dolfin.Point(Ln+Lr,0.5*theta )],Expression(('x[0] + Ln2-Ln - Delta * sindt','Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+mid_left = edgeinput([dolfin.Point(0.,0.),dolfin.Point(0., 1.)],Expression(('-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+mid_bottom = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln, 0.5*theta)],Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ','at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+left = edgeinput([dolfin.Point(-Ll,1.),dolfin.Point(-Ll, 0.)],Expression(('x[0]-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+bottom_left = edgeinput([dolfin.Point(-Ll,0.),dolfin.Point(0., 0.)],Expression(('x[0]','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+bottom_mid = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln,-0.5*theta )],Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
+bottom_right = edgeinput([dolfin.Point(Ln,-0.5*theta ),dolfin.Point(Ln+Lr,-0.5*theta )],Expression(('x[0] + Ln2-Ln - (Delta-theta) * sindt','Delta-theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at))
 
 # define a vector with the edges
 edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
