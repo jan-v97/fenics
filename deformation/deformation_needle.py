@@ -114,24 +114,24 @@ class Identity2(UserExpression):
 
 
 # input parameters for computational domain
-Ln = 1.5
-L = 4.
-Ll = 1.
+Ln = 6.5
+L = 14.5
+Ll = 2.5
 Lr = L - Ln - Ll
-resolution = 50
+resolution = 150
 
 # input parameters for the twin structure
-theta = 0.22
+theta = 0.25
 delta = 0.1
 
 
 #                                                setting up the mesh                                                      
 
 # initialize parameters for the shape optimization
-Ln2 = Constant (Ln)
-Delta = Constant (0.)
-ab = Constant (0.)
-at = Constant (0.)
+Ln2 = Constant (6.8)
+Delta = Constant (0.1225)
+ab = Constant (2.8e-3)
+at = Constant (2.6e-3)
 
 # calculations
 cosdt = cos(atan2(delta*theta,1.))
@@ -270,6 +270,7 @@ bcsopt = [dbcopt]
 
 u = Function (V, name='displacement')
 p = Function (V, name='dual solution')
+v = TestFunction(V)
 uu = TrialFunction (V) 
 
 #                                                 calculating the deformation                                                    
@@ -330,18 +331,18 @@ for i in range(0,edges_number):
 	bcs.append(bc)
 
 
-# compute the deformation u
-deform=Function(W)
+# compute the deformation psi
+psi=Function(W, name='psi')
 vt=TestFunction(W)
-a = inner(grad(deform),grad(vt)) *dx
+a = inner(grad(psi),grad(vt)) *dx
 L = 0
-solve(a == L, deform, bcs)
+solve(a == L, psi, bcs)
 
 # compute the displacement
 id = project(Identity2(),W)
-displacement = project(deform-id,W)
+displacement_psi = project(psi-id,W)
 
-T = grad (deform)
+T = grad (psi)
 
 #                                                 end of calculating the deformation                       
 
@@ -365,13 +366,19 @@ E = Edens*dx
 
 # Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
 duE = derivative (E, u)
+F = derivative (E, u, v)
 duduE = derivative (duE, u)
 
+solve (F == 0, u, bcsopt)
+startE = assemble(E)
+print ("********** E = %f" % startE, flush=True)
 
-Ln2 = Function(U)
-Delta = Constant (0.5*theta)
-ab = Constant (0.)
-at = Constant (0.)
+
+
+#Ln2 = Function(U)
+#Delta = Constant (0.5*theta)
+#ab = Constant (0.)
+#at = Constant (0.)
 #DvE = derivative (E, alpha) - derivative (action (duE, p), alpha) # shape gradient using adjoint
 
 
@@ -422,5 +429,7 @@ file.parameters ["rewrite_function_mesh"] = False
 # safe displacement
 vtkfile = File('deformation_needle/const.pvd')
 vtkfile << chi_test
-vtkfile = File('deformation_needle/displacement.pvd')
-vtkfile << displacement
+vtkfile = File('deformation_needle/displacement_psi.pvd')
+vtkfile << displacement_psi
+vtkfile = File('deformation_needle/u.pvd')
+vtkfile << u
