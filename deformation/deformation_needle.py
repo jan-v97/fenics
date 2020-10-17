@@ -127,15 +127,6 @@ delta = 0.1
 
 #                                                setting up the mesh                                                      
 
-# initialize parameters for the shape optimization
-Ln2 = Constant (6.8)
-Delta = Constant (0.1225)
-ab = Constant (2.8e-3)
-at = Constant (2.6e-3)
-
-# calculations
-cosdt = cos(atan2(delta*theta,1.))
-sindt = sin(atan2(delta*theta,1.))
 
 # input edges
 edge_number = 14
@@ -155,47 +146,6 @@ bottom_right = edgeinput([dolfin.Point(Ln,-0.5*theta ),dolfin.Point(Ln+Lr,-0.5*t
 # define a vector with the edges
 edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
 edges_number = len(edges)
-
-# define the boundary conditions
-top_left.deformation = Expression(('x[0]-sindt','1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_top_left(x, on_boundary):
-	return on_polygon(x,top_left)
-top_mid.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_top_mid(x, on_boundary):
-	return on_polygon(x,top_mid)
-top_right.deformation = Expression(('x[0] + Ln2-Ln - (1.-theta+Delta) * sindt','1. - theta + Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_top_right(x, on_boundary):
-	return on_polygon(x,top_right)
-right_top.deformation = Expression(('((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_right_top(x, on_boundary):
-	return on_polygon(x,right_top)
-right_bottom.deformation = Expression(('((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_right_bottom(x, on_boundary):
-	return on_polygon(x,right_bottom)
-mid_right.deformation = Expression(('x[0] + Ln2-Ln - Delta * sindt','Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_mid_right(x, on_boundary):
-	return on_polygon(x,mid_right)
-mid_left.deformation = Expression(('-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_mid_left(x, on_boundary):
-	return on_polygon(x,mid_left)
-mid_bottom.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ','at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_mid_bottom(x, on_boundary):
-	return on_polygon(x,mid_bottom)
-left.deformation = Expression(('x[0]-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_left(x, on_boundary):
-	return on_polygon(x,left)
-bottom_left.deformation = Expression(('x[0]','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_bottom_left(x, on_boundary):
-	return on_polygon(x,bottom_left)
-bottom_mid.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_bottom_mid(x, on_boundary):
-	return on_polygon(x,bottom_mid)
-bottom_right.deformation = Expression(('x[0] + Ln2-Ln - (Delta-theta) * sindt','Delta-theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
-def boundary_bottom_right(x, on_boundary):
-	return on_polygon(x,bottom_right)
-
-# define a vector with the boundary conditions
-boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
 
 # input domain
 domain_complete = subdomaininput([top_left,left,bottom_left, bottom_mid, bottom_right, right_bottom, right_top, top_right, top_mid],[0,0,0,0,0,0,0,0,0],0)
@@ -240,9 +190,6 @@ chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
 
 a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
 
-print ("********** L = %f + %f + %f, H = 1, theta = %f" % (Ll, Ln2, Lr, theta), flush=True)
-print ("********** a = (%f, %f, %f, %f), delta = %f" % (a1, a2, a4, a4, delta), flush=True)
-
 class PeriodicBoundary (SubDomain):
     # bottom boundary is target domain
     def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
@@ -277,7 +224,7 @@ uu = TrialFunction (V)
 
 alpha = Constant((Ln,0.5*theta,0.,0.))
 values = alpha.values()
-Ln = values[0]
+Ln2 = values[0]
 Delta = values[1]
 ab = values[2]
 at = values[3]
@@ -286,6 +233,10 @@ at = values[3]
 #Delta = 0.5*theta
 #ab = 0.
 #at = 0.
+
+# calculations
+cosdt = cos(atan2(delta*theta,1.))
+sindt = sin(atan2(delta*theta,1.))
 
 # redefine the boundary conditions
 top_left.deformation = Expression(('x[0]-sindt','1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
@@ -325,18 +276,21 @@ bottom_right.deformation = Expression(('x[0] + Ln2-Ln - (Delta-theta) * sindt','
 def boundary_bottom_right(x, on_boundary):
 	return on_polygon(x,bottom_right)
 
+# define a vector with the boundary conditions
+boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
+
 bcs = []
 for i in range(0,edges_number):
 	bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
 	bcs.append(bc)
 
 
-# compute the deformation psi
-psi=Function(W, name='psi')
+# compute the deformation 
+psit=TrialFunction(W)
 vt=TestFunction(W)
-a = inner(grad(psi),grad(vt)) *dx
-L = 0
-solve(a == L, psi, bcs)
+a = inner(grad(psit),grad(vt)) *dx
+psi=Function(W, name='psi')
+solve(lhs(a)==rhs(a), psi, bcs)
 
 # compute the displacement
 id = project(Identity2(),W)
@@ -346,6 +300,8 @@ T = grad (psi)
 
 #                                                 end of calculating the deformation                       
 
+print ("********** L = %f + %f + %f, H = 1, theta = %f" % (Ll, Ln2, Lr, theta), flush=True)
+print ("********** a = (%f, %f, %f, %f), delta = %f" % (a1, a2, a4, a4, delta), flush=True)
 
 GA = Constant (((1,delta), (0,1)))
 GB = Constant (((1,-delta), (0,1)))
@@ -366,6 +322,7 @@ E = Edens*dx
 
 # Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
 duE = derivative (E, u)
+dpsiduE = derivative (E,psi)
 F = derivative (E, u, v)
 duduE = derivative (duE, u)
 
