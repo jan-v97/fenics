@@ -1,7 +1,11 @@
+from scipy import optimize # import before fenics (otherwise L-BFGS-B crashes)
 from fenics import *
 from dolfin import *
 from mshr import *
+from math import *
 import numpy
+
+nonlin_solve_params = {"nonlinear_solver":"newton", "newton_solver":{"linear_solver":"mumps", "maximum_iterations":100, "relative_tolerance":1e-12}}
 
 tol= 1E-14
 
@@ -12,7 +16,6 @@ tol= 1E-14
 #                                                                   müssen mit angegeben werden
 # data            Liste mit punktezahl-Dolfin Punkten     Angabe in Reihenfolge
 # deformation     string                                  Information über Deformation auf der Kante
-#                                                             '' for no deformation
 class edgeinput:
 	def __init__(self, data, deformation):
 		self.pointnumber = len(data)
@@ -25,7 +28,6 @@ class edgeinput:
 		for i in range(self.pointnumber):
 			print ('         ( ', self.data[i].x(),' , ', self.data[i].y(),' )')
 		print('deformation:   ', self.deformation)
-
 
 # input der Subdomains
 # kantenzahl       integer                                Anzahl der Kanten, die an das Gebiet angrenzen
@@ -94,8 +96,7 @@ def on_polygon(x,edge):
 	return False
 
 
-
-class Identity(UserExpression):
+class Identity2(UserExpression):
 	def __init__(self, **kwargs):
 		super().__init__(**kwargs)
 
@@ -106,137 +107,57 @@ class Identity(UserExpression):
 	def value_shape(self):
 		return (2,)
 
+
+
+	
 #                                               input parameters, edges, bc, domains                                          
 
+
 # input parameters for computational domain
-L1 = 2.
-L2 = 2.
-resolution = 30
+Ln = 6.5
+L = 14.5
+Ll = 2.5
+Lr = L - Ln - Ll
+resolution = 150
 
 # input parameters for the twin structure
-theta_t = 0.6
-theta_r = 0.4
-phi = 0.05*pi
-
-#parameters for the shape optimization
-#shift of needles
-delta_t = 0.1
-delta_r = 0.
-#stretching of needle
-Lt = 1.5
-Lr = 1.5
-#displacement of midpoint
-pt = -0.1
-pr = -0.05
-#quadratic parameters
-tc1 = -0.05
-tc2 = -0.05
-tc3 = -0.05
-tc4 = 0.3
-tlb = -0.1
-tbl = 0.1
-
-#calculations
-rho = cos(0.5*pi-atan(1./3.)-2*phi)*sqrt(0.75*0.75+0.25*0.25)
-hr = cos(phi)-sin(phi)
-cos2phi = cos(2*phi)
-sin2phi = sin(2*phi)
-cosphi = cos(phi)
-sinphi = sin(phi)
-tangens = hr/tan(0.25*pi-phi)
+theta = 0.25
+delta = 0.1
 
 
-#cosphi+sinphi  ;  cosphi-sinphi
-#0.75+pr  ;  0.25+pt
-#((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  ;  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi
-#Lr  ;  0.5*hr*theta_r+delta_r
-#Lr  ;  -0.5*hr*theta_r+delta_r
-#Lr+cosphi+sinphi  ;  (1-0.5*theta_r)*hr+delta_r
+#                                                setting up the mesh                                                      
 
 
 # input edges
-lt = edgeinput([dolfin.Point(0., -0.25+L1+L2),dolfin.Point(0., -0.75+L1)],Expression(('((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  (rho+Lt)*sin2phi+(delta_t+hr)*cos2phi-cosphi-sinphi  -  ((rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi))  +  (rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi','((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  (rho+Lt)*cos2phi-(delta_t+hr)*sin2phi-cosphi+sinphi  -  ((rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi))  +  (rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi'),degree=1,delta_t=delta_t,theta_t=theta_t,tangens=tangens,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-lb = edgeinput([dolfin.Point(0., -0.75+L1),dolfin.Point(0., 0.)],Expression(('tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))  +  ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi-cosphi-sinphi-tlb)  *  ((x[1])/(L1-0.75))','((x[1])/(L1-0.75))*((rho+Lt)*cos2phi-(delta_t+hr)*sin2phi-cosphi+sinphi)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tlb=tlb,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-tl = edgeinput([dolfin.Point(0.5, 0.25+L1+L2),dolfin.Point(0., -0.25+L1+L2)],Expression(('(x[0]/0.5)  *  (  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  ((rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi))  +  ((rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi)','(x[0]/0.5)  *   (  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)  -  ((rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi))  +  (rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi'),degree=1,delta_t=delta_t,tangens=tangens,delta_r=delta_r,theta_t=theta_t,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-tr = edgeinput([dolfin.Point(1., 0.75+L1+L2),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('((x[0]-0.5)/0.5)  *  (  (rho+Lt+L2+tangens*theta_t)*sin2phi+(delta_t+hr)*cos2phi  -  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  )  +  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)','((x[0]-0.5)/0.5)  *  (  ((rho+Lt+L2+tangens*theta_t)*cos2phi-(delta_t+hr)*sin2phi)  -  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi))  +  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)'),degree=1,delta_t=delta_t,tangens=tangens,theta_t=theta_t,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-mt = edgeinput([dolfin.Point(0.5, 0.25+L1),dolfin.Point(0.5, 0.25+L1+L2)],Expression(('((x[1]-(0.25+L1+L2))/(-L2))  *   (  ((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  ((rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi))  +  (rho+Lt+L2)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi','((x[1]-(0.25+L1+L2))/(-L2))  *   (  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi  -  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi))  +  ((rho+Lt+L2)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi)'),degree=1,delta_t=delta_t,theta_t=theta_t,delta_r=delta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-lt2 = edgeinput([dolfin.Point(1., 0.25+L1),dolfin.Point(1., 0.75+L1+L2)],Expression(('((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi)  -  ((rho+Lt+L2+tangens*theta_t)*sin2phi+(delta_t+hr)*cos2phi))  +  (rho+Lt+L2+tangens*theta_t)*sin2phi+(delta_t+hr)*cos2phi','((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  (rho+Lt)*cos2phi-(delta_t+hr)*sin2phi  -  ((rho+Lt+L2+tangens*theta_t)*cos2phi-(delta_t+hr)*sin2phi)  )  +  ((rho+Lt+L2+tangens*theta_t)*cos2phi-(delta_t+hr)*sin2phi)'),degree=1,delta_t=delta_t,theta_t=theta_t,tangens=tangens,L2=L2,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-lb2 = edgeinput([dolfin.Point(1., 1.),dolfin.Point(1., 0.25+L1)],Expression(('tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))   +   ((rho+Lt)*sin2phi+(delta_t+hr)*cos2phi  -  (cosphi+sinphi)  -tlb)*((x[1]-1.)/(L1-0.75))  +  cosphi+sinphi','((x[1]-1.)/(L1-0.75))  *  ((rho+Lt)*cos2phi-(delta_t+hr)*sin2phi  -  (cosphi-sinphi))  +  cosphi-sinphi'),degree=1,delta_t=delta_t,L1=L1,Lt=Lt,tlb=tlb,rho=rho,hr=hr,cos2phi=cos2phi,L2=L2,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(0.5, 0.25+L1)],Expression(('tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))  +  (((rho+Lt)*sin2phi+(delta_t+(1-theta_t)*hr)*cos2phi)  -  (0.75+pr)  -  tc4)*((x[1]-0.25)/(L1))  +  0.75+pr','((x[1]-0.25)/(L1))  *  (  (rho+Lt)*cos2phi-(delta_t+(1-theta_t)*hr)*sin2phi  -  (0.25+pt)  )  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc4=tc4,theta_t=theta_t,L2=L2,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-c3 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1., 1.)],Expression(('tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)  +  (cosphi+sinphi  -  (0.75+pr)  -  tc3)*((x[1]-0.25)/0.75)  +  0.75+pr','((x[1]-0.25)/0.75)  *  (  cosphi-sinphi  -  (0.25+pt)  )  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc3=tc3,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, 0.25)],Expression(('((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr','tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.5*hr*theta_r+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc2=tc2,theta_r=theta_r,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-c1 = edgeinput([dolfin.Point(0., 0.),dolfin.Point(0.75, 0.25)],Expression(('(x[0]/0.75)*(0.75+pr)','tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75)'),degree=1,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tc1=tc1,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-bl = edgeinput([dolfin.Point(0., 0.),dolfin.Point(L1, -0.25)],Expression(('(x[0]/L1)*(Lr)','tbl*(x[0]/L1)*(x[0]/L1)  +  (-0.5*hr*theta_r+delta_r  -  tbl)*(x[0]/L1)'),degree=1,theta_r=theta_r,delta_t=delta_t,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-br = edgeinput([dolfin.Point(L1, -0.25),dolfin.Point(L1+L2, -0.25)],Expression(('x[0]+(Lr-L1)','-0.5*hr*theta_r+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-mr = edgeinput([dolfin.Point(L1, 0.25),dolfin.Point(L1+L2+0.5, 0.25)],Expression(('((x[0]-L1)/(L2+0.5))  *  (L2+theta_r*(cosphi+sinphi))  +  Lr','0.5*hr*theta_r+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi,L2=L2))
-rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2+0.5, 0.25)],Expression(('((x[1]+0.25)/(0.5))  *  theta_r*(cosphi+sinphi) + Lr+L2','((x[1]+0.25)/(0.5))  *  (0.5*hr*theta_r+delta_r  - (-0.5*hr*theta_r+delta_r))  - 0.5*hr*theta_r+delta_r '),degree=1,delta_t=delta_t,delta_r=delta_r,theta_r=theta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-rt = edgeinput([dolfin.Point(L1+L2+0.5, 0.25),dolfin.Point(L1+L2+1., 0.75)],Expression(('((x[1]-0.25)/(0.5))  * (1-theta_r)*(cosphi+sinphi)  +  Lr+L2+theta_r*(cosphi+sinphi)','((x[1]-0.25)/(0.5))  *  ((1-theta_r)*hr)  + 0.5*hr*theta_r+delta_r '),degree=1,delta_t=delta_t,delta_r=delta_r,theta_r=theta_r,L1=L1,L2=L2,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
-br2 = edgeinput([dolfin.Point(L1+L2+1., 0.75),dolfin.Point(1.+L1, 0.75)],Expression(('((x[0]-(L1+1.))/(L2))  *  L2  +  Lr+cosphi+sinphi','(1-0.5*theta_r)*hr+delta_r'),degree=1,delta_t=delta_t,theta_r=theta_r,delta_r=delta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,L2=L2,cosphi=cosphi,sinphi=sinphi))
-bl2 = edgeinput([dolfin.Point(1+L1, 0.75),dolfin.Point(1., 1.)],Expression(('((x[0]-1.)/L1)*(Lr)+cosphi+sinphi','tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  ((1-0.5*theta_r)*hr+delta_r  -  (cosphi-sinphi)  -  tbl)*((x[0]-1.)/L1)  +  cosphi-sinphi'),degree=1,delta_t=delta_t,L2=L2,delta_r=delta_r,theta_r=theta_r,L1=L1,Lt=Lt,Lr=Lr,pt=pt,pr=pr,tbl=tbl,rho=rho,hr=hr,cos2phi=cos2phi,sin2phi=sin2phi,cosphi=cosphi,sinphi=sinphi))
+edge_number = 14
+top_left = edgeinput([dolfin.Point(0.,1.0),dolfin.Point(-Ll, 1.0)],Expression(('x[0]','x[1]'), degree=1))
+top_mid = edgeinput([dolfin.Point(Ln,1-0.5*theta),dolfin.Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
+top_right = edgeinput([dolfin.Point(Ln+Lr,1-0.5*theta),dolfin.Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+right_top = edgeinput([dolfin.Point(Ln+Lr,0.5*theta),dolfin.Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+right_bottom = edgeinput([dolfin.Point(Ln+Lr,-0.5*theta),dolfin.Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+mid_right = edgeinput([dolfin.Point(Ln,0.5*theta ),dolfin.Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+mid_left = edgeinput([dolfin.Point(0.,0.),dolfin.Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
+mid_bottom = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+left = edgeinput([dolfin.Point(-Ll,1.),dolfin.Point(-Ll, 0.)],Expression(('x[0]','x[1]'), degree=1))
+bottom_left = edgeinput([dolfin.Point(-Ll,0.),dolfin.Point(0., 0.)],Expression(('x[0]','x[1]'), degree=1))
+bottom_mid = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+bottom_right = edgeinput([dolfin.Point(Ln,-0.5*theta ),dolfin.Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
 
 # define a vector with the edges
-edges = [lt,lb,tl,tr,mt,lt2,lb2,c4,c3,c2,c1,bl,br,mr,rb,rt,br2,bl2]
+edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
 edges_number = len(edges)
 
-
-# define the boundary conditions
-def boundary_lt(x, on_boundary):
-	return on_polygon(x,lt)
-def boundary_lb(x, on_boundary):
-	return on_polygon(x,lb)
-def boundary_tl(x, on_boundary):
-	return on_polygon(x,tl)
-def boundary_tr(x, on_boundary):
-	return on_polygon(x,tr)
-def boundary_mt(x, on_boundary):
-	return on_polygon(x,mt)
-def boundary_lt2(x, on_boundary):
-	return on_polygon(x,lt2)
-def boundary_lb2(x, on_boundary):
-	return on_polygon(x,lb2)
-def boundary_c4(x, on_boundary):
-	return on_polygon(x,c4)
-def boundary_c3(x, on_boundary):
-	return on_polygon(x,c3)
-def boundary_c2(x, on_boundary):
-	return on_polygon(x,c2)
-def boundary_c1(x, on_boundary):
-	return on_polygon(x,c1)
-def boundary_bl(x, on_boundary):
-	return on_polygon(x,bl)
-def boundary_br(x, on_boundary):
-	return on_polygon(x,br)
-def boundary_mr(x, on_boundary):
-	return on_polygon(x,mr)
-def boundary_rb(x, on_boundary):
-	return on_polygon(x,rb)
-def boundary_rt(x, on_boundary):
-	return on_polygon(x,rt)
-def boundary_br2(x, on_boundary):
-	return on_polygon(x,br2)
-def boundary_bl2(x, on_boundary):
-	return on_polygon(x,bl2)
-
-# define a vector with the boundary conditions
-boundary_edges = [boundary_lt,boundary_lb,boundary_tl,boundary_tr,boundary_mt,boundary_lt2,boundary_lb2,boundary_c4,boundary_c3,boundary_c2,boundary_c1,boundary_bl,boundary_br,boundary_mr,boundary_rb,boundary_rt,boundary_br2,boundary_bl2]
-
-
-# define the complete domain
-domain_complete = subdomaininput([lt,lb,bl,br,rb,rt,br2,bl2,lb2,lt2,tr,tl],[0,0,0,0,0,0,0,0,0,0,0,0],0)
+# input domain
+domain_complete = subdomaininput([top_left,left,bottom_left, bottom_mid, bottom_right, right_bottom, right_top, top_right, top_mid],[0,0,0,0,0,0,0,0,0],0)
 
 # input subdomains
-domain_left = subdomaininput([lt,lb,c1,c4,mt,tl],[0,0,0,0,0,0],0)
-domain_top = subdomaininput([c3,lb2,lt2,tr,mt,c4],[0,0,0,0,1,1],0)
-domain_right = subdomaininput([c2,mr,rt,br2,bl2,c3],[0,0,0,0,0,1],0)
-domain_bottom = subdomaininput([bl,br,rb,mr,c2,c1],[0,0,0,1,1,1],0)
+domain_left = subdomaininput([top_left,left,bottom_left,mid_left],[0,0,0,0],0)
+domain_top = subdomaininput([mid_bottom,mid_right,right_top,top_right,top_mid,mid_left],[0,0,0,0,0,1],0)
+domain_bottom = subdomaininput([bottom_mid,bottom_right,right_bottom,mid_right,mid_bottom],[0,0,0,1,1],0)
 
-# define a vector with the subdomains
-subdomains = [domain_left,domain_top,domain_right,domain_bottom]
+# define vector of subdomains
+subdomains = [domain_left,domain_top,domain_bottom]
 subdomain_number = len(subdomains)
-
-
-
-#                                                 actual program                                                    
 
 # defining the domain, and the subdomains
 domain = Polygon(domain_complete.get_polygon())
@@ -245,6 +166,7 @@ for i in range(0, subdomain_number):
 
 # generat the mesh
 mesh = generate_mesh (domain, resolution)
+
 
 # defining coefficients on subdomains
 X = FunctionSpace (mesh, "DG", 0)
@@ -258,23 +180,112 @@ def sudom_fct (sudom_arr, vals, fctspace):
     f.vector()[:] = numpy.choose (sudom_arr, vals)
     return f
 
-chi_l = sudom_fct (sudom_arr, [0,1,0,0,0], X)
-chi_t = sudom_fct (sudom_arr, [0,0,1,0,0], X)
-chi_r = sudom_fct (sudom_arr, [0,0,0,1,0], X)
-chi_b = sudom_fct (sudom_arr, [0,0,0,0,1], X)
-chi_test = sudom_fct (sudom_arr, [0,2,1,3,4], X)
+chi_a = sudom_fct (sudom_arr, [0,1,0,1], X)
+chi_b = sudom_fct (sudom_arr, [0,0,1,0], X)
+chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
 
-# create the function space
-W = VectorFunctionSpace(mesh, 'P', 1)
 
-# define dirichlet BC
+
+#                                                 the programm                                                      
+
+a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
+
+class PeriodicBoundary (SubDomain):
+    # bottom boundary is target domain
+    def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
+    # Map top boundary to bottom boundary
+    def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
+
+
+
+# create the function spaces
+U = FunctionSpace (mesh, "CG", 1)
+V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
+W = VectorFunctionSpace(mesh, 'CG', 1)
+
+
+dx = Measure ('dx', domain=mesh)
+
+class DirichletBoundaryOpt (SubDomain):
+    def inside (self, x, on_boundary): return bool (near (x[0], 0) and near (x[1], 0))
+
+zero = Constant ((0,0))
+tip = DirichletBoundaryOpt()
+dbcopt = DirichletBC (V, zero, tip,method='pointwise')
+bcsopt = [dbcopt]
+
+
+u = Function (V, name='displacement')
+p = Function (V, name='dual solution')
+v = TestFunction(V)
+uu = TrialFunction (V) 
+
+#                                                 calculating the deformation                                                    
+
+alpha = Constant((Ln,0.5*theta,0.,0.))
+values = alpha.values()
+Ln2 = values[0]
+Delta = values[1]
+ab = values[2]
+at = values[3]
+
+#Ln2 = Ln
+#Delta = 0.5*theta
+#ab = 0.
+#at = 0.
+
+# calculations
+cosdt = cos(atan2(delta*theta,1.))
+sindt = sin(atan2(delta*theta,1.))
+
+# redefine the boundary conditions
+top_left.deformation = Expression(('x[0]-sindt','1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_top_left(x, on_boundary):
+	return on_polygon(x,top_left)
+top_mid.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_top_mid(x, on_boundary):
+	return on_polygon(x,top_mid)
+top_right.deformation = Expression(('x[0] + Ln2-Ln - (1.-theta+Delta) * sindt','1. - theta + Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_top_right(x, on_boundary):
+	return on_polygon(x,top_right)
+right_top.deformation = Expression(('((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_right_top(x, on_boundary):
+	return on_polygon(x,right_top)
+right_bottom.deformation = Expression(('((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt','x[1]+ Delta-0.5*theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_right_bottom(x, on_boundary):
+	return on_polygon(x,right_bottom)
+mid_right.deformation = Expression(('x[0] + Ln2-Ln - Delta * sindt','Delta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_mid_right(x, on_boundary):
+	return on_polygon(x,mid_right)
+mid_left.deformation = Expression(('-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_mid_left(x, on_boundary):
+	return on_polygon(x,mid_left)
+mid_bottom.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ','at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_mid_bottom(x, on_boundary):
+	return on_polygon(x,mid_bottom)
+left.deformation = Expression(('x[0]-x[1]*sindt','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_left(x, on_boundary):
+	return on_polygon(x,left)
+bottom_left.deformation = Expression(('x[0]','x[1]'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_bottom_left(x, on_boundary):
+	return on_polygon(x,bottom_left)
+bottom_mid.deformation = Expression(('(x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))','ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_bottom_mid(x, on_boundary):
+	return on_polygon(x,bottom_mid)
+bottom_right.deformation = Expression(('x[0] + Ln2-Ln - (Delta-theta) * sindt','Delta-theta'),degree=1,sindt=sindt,cosdt=cosdt,Ln=Ln,Ln2=Ln2,Lr=Lr,theta=theta,Delta=Delta,ab=ab,at=at)
+def boundary_bottom_right(x, on_boundary):
+	return on_polygon(x,bottom_right)
+
+# define a vector with the boundary conditions
+boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
+
 bcs = []
 for i in range(0,edges_number):
 	bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
 	bcs.append(bc)
 
 
-# compute the deformation u
+# compute the deformation 
 psit=TrialFunction(W)
 vt=TestFunction(W)
 a = inner(grad(psit),grad(vt)) *dx
@@ -282,12 +293,57 @@ psi=Function(W, name='psi')
 solve(lhs(a)==rhs(a), psi, bcs)
 
 # compute the displacement
-id = project(Identity(),W)
-displacement = project(u-id,W)
+id = project(Identity2(),W)
+displacement_psi = project(psi-id,W)
+
+T = grad (psi)
+
+#                                                 end of calculating the deformation                       
+
+print ("********** L = %f + %f + %f, H = 1, theta = %f" % (Ll, Ln2, Lr, theta), flush=True)
+print ("********** a = (%f, %f, %f, %f), delta = %f" % (a1, a2, a4, a4, delta), flush=True)
+
+GA = Constant (((1,delta), (0,1)))
+GB = Constant (((1,-delta), (0,1)))
+G = chi_a*GA + chi_b*GB
+
+S1 = Constant(((1,-delta*theta/sqrt(1+delta**2+theta**2)),(0,1/sqrt(1+delta**2+theta**2))))
+S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
+
+def energy_density (u, psi, G, a1, a2, a3, a4):
+	F = ( Identity(2) + S2 + grad(u)* inv(T) ) * inv(grad(psi))
+	C = F.T*F
+	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(T))
+
+
+# Total potential energy and derivatives
+Edens = energy_density (u, psi, G, a1, a2, a3, a4)
+E = Edens*dx
+
+# Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
+duE = derivative (E, u)
+dpsiduE = derivative (duE,psi)
+F = derivative (E, u, v)
+duduE = derivative (duE, u)
+
+solve (F == 0, u, bcsopt)
+startE = assemble(E)
+print ("********** E = %f" % startE, flush=True)
+
+
+
+# calculating dual solution p
+solve (action(duduE,uu)==duE,p)
+
+# dalphaE = -action(dpsiduE * dalphapsi,p)
+
+
 
 
 # safe displacement
-vtkfile = File('needles/const.pvd')
+vtkfile = File('needle/const.pvd')
 vtkfile << chi_test
-vtkfile = File('needles/displacement.pvd')
-vtkfile << displacement
+vtkfile = File('needle/displacement_psi.pvd')
+vtkfile << displacement_psi
+vtkfile = File('needle/u.pvd')
+vtkfile << u
