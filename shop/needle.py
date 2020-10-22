@@ -1,11 +1,11 @@
-from scipy import optimize # import before fenics (otherwise L-BFGS-B crashes)
+#from scipy import optimize # import before fenics (otherwise L-BFGS-B crashes)
 from fenics import *
 from dolfin import *
 from mshr import *
+from fenics_adjoint import *
+from pyadjoint.overloaded_type import create_overloaded_object
 from math import *
 import numpy
-
-nonlin_solve_params = {"nonlinear_solver":"newton", "newton_solver":{"linear_solver":"mumps", "maximum_iterations":100, "relative_tolerance":1e-12}}
 
 tol= 1E-14
 
@@ -130,18 +130,18 @@ delta = 0.1
 
 # input edges
 edge_number = 14
-top_left = edgeinput([dolfin.Point(0.,1.0),dolfin.Point(-Ll, 1.0)],Expression(('x[0]','x[1]'), degree=1))
-top_mid = edgeinput([dolfin.Point(Ln,1-0.5*theta),dolfin.Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-top_right = edgeinput([dolfin.Point(Ln+Lr,1-0.5*theta),dolfin.Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_top = edgeinput([dolfin.Point(Ln+Lr,0.5*theta),dolfin.Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_bottom = edgeinput([dolfin.Point(Ln+Lr,-0.5*theta),dolfin.Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-mid_right = edgeinput([dolfin.Point(Ln,0.5*theta ),dolfin.Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-mid_left = edgeinput([dolfin.Point(0.,0.),dolfin.Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-mid_bottom = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-left = edgeinput([dolfin.Point(-Ll,1.),dolfin.Point(-Ll, 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_left = edgeinput([dolfin.Point(-Ll,0.),dolfin.Point(0., 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_mid = edgeinput([dolfin.Point(0.,0.),dolfin.Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-bottom_right = edgeinput([dolfin.Point(Ln,-0.5*theta ),dolfin.Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+top_left = edgeinput([Point(0.,1.0),Point(-Ll, 1.0)],Expression(('x[0]','x[1]'), degree=1))
+top_mid = edgeinput([Point(Ln,1-0.5*theta),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
+top_right = edgeinput([Point(Ln+Lr,1-0.5*theta),Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+right_top = edgeinput([Point(Ln+Lr,0.5*theta),Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+right_bottom = edgeinput([Point(Ln+Lr,-0.5*theta),Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+mid_right = edgeinput([Point(Ln,0.5*theta ),Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+mid_left = edgeinput([Point(0.,0.),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
+mid_bottom = edgeinput([Point(0.,0.),Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
+left = edgeinput([Point(-Ll,1.),Point(-Ll, 0.)],Expression(('x[0]','x[1]'), degree=1))
+bottom_left = edgeinput([Point(-Ll,0.),Point(0., 0.)],Expression(('x[0]','x[1]'), degree=1))
+bottom_mid = edgeinput([Point(0.,0.),Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+bottom_right = edgeinput([Point(Ln,-0.5*theta ),Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
 
 # define a vector with the edges
 edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
@@ -166,7 +166,7 @@ for i in range(0, subdomain_number):
 
 # generat the mesh
 mesh = generate_mesh (domain, resolution)
-
+mesh = create_overloaded_object(mesh)
 
 # defining coefficients on subdomains
 X = FunctionSpace (mesh, "DG", 0)
@@ -191,10 +191,10 @@ chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
 a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
 
 class PeriodicBoundary (SubDomain):
-    # bottom boundary is target domain
-    def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
-    # Map top boundary to bottom boundary
-    def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
+	# bottom boundary is target domain
+	def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
+	# Map top boundary to bottom boundary
+	def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
 
 
 
@@ -207,11 +207,11 @@ W = VectorFunctionSpace(mesh, 'CG', 1)
 dx = Measure ('dx', domain=mesh)
 
 class DirichletBoundaryOpt (SubDomain):
-    def inside (self, x, on_boundary): return bool (near (x[0], 0) and near (x[1], 0))
+	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
 
 zero = Constant ((0,0))
 tip = DirichletBoundaryOpt()
-dbcopt = DirichletBC (V, zero, tip,method='pointwise')
+dbcopt = DirichletBC (V, zero, tip)
 bcsopt = [dbcopt]
 
 
@@ -286,6 +286,7 @@ for i in range(0,edges_number):
 
 
 # compute the deformation 
+print ("******* compute the deformation from computational domain to fundamental cell:")
 psit=TrialFunction(W)
 vt=TestFunction(W)
 a = inner(grad(psit),grad(vt)) *dx
@@ -296,12 +297,9 @@ solve(lhs(a)==rhs(a), psi, bcs)
 id = project(Identity2(),W)
 displacement_psi = project(psi-id,W)
 
-T = grad (psi)
+# T = grad (psi)
 
 #                                                 end of calculating the deformation                       
-
-print ("********** L = %f + %f + %f, H = 1, theta = %f" % (Ll, Ln2, Lr, theta), flush=True)
-print ("********** a = (%f, %f, %f, %f), delta = %f" % (a1, a2, a4, a4, delta), flush=True)
 
 GA = Constant (((1,delta), (0,1)))
 GB = Constant (((1,-delta), (0,1)))
@@ -311,9 +309,9 @@ S1 = Constant(((1,-delta*theta/sqrt(1+delta**2+theta**2)),(0,1/sqrt(1+delta**2+t
 S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
 
 def energy_density (u, psi, G, a1, a2, a3, a4):
-	F = ( Identity(2) + S2 + grad(u)* inv(T) ) * inv(grad(psi))
+	F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(grad(psi))
 	C = F.T*F
-	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(T))
+	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
 
 
 # Total potential energy and derivatives
@@ -326,6 +324,8 @@ dpsiduE = derivative (duE,psi)
 F = derivative (E, u, v)
 duduE = derivative (duE, u)
 
+
+print ("******* compute the elastic deformation:")
 solve (F == 0, u, bcsopt)
 startE = assemble(E)
 print ("********** E = %f" % startE, flush=True)
@@ -333,9 +333,10 @@ print ("********** E = %f" % startE, flush=True)
 
 
 # calculating dual solution p
+print ("******* solving the dual equation:")
 solve (action(duduE,uu)==duE,p)
 
-# dalphaE = -action(dpsiduE * dalphapsi,p)
+#dJ = derivative(E,Control(alpha))
 
 
 

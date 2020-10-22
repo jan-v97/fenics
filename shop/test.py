@@ -2,6 +2,8 @@ from scipy import optimize # import before fenics (otherwise L-BFGS-B crashes)
 from fenics import *
 from dolfin import *
 from mshr import *
+from fenics_adjoint import *
+from pyadjoint.overloaded_type import create_overloaded_object
 from math import *
 import numpy
 
@@ -141,6 +143,7 @@ domain = Polygon(domain_complete.get_polygon())
 
 # generat the mesh
 mesh = generate_mesh (domain, resolution)
+mesh = create_overloaded_object(mesh)
 
 
 #                                                 the programm                                                      
@@ -198,9 +201,10 @@ displacement_psi = project(psi-id,W)
 
 #                                                 end of calculating the deformation                       
 
-A = assemble(lhs(a))
-b = bc.get_boundary_values()
+#A = assemble(lhs(a))
+#b = bc.get_boundary_values()
 #print("stiffness_matrix: \n", A.array())
+#dvdJ = derivative(a,alpha)
 
 
 #dalphapsi = derivative(psi,alpha)
