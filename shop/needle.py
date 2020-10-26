@@ -6,6 +6,8 @@ from fenics_adjoint import *
 from pyadjoint.overloaded_type import create_overloaded_object
 from math import *
 import numpy
+import scipy
+import sympy as sp
 
 tol= 1E-14
 
@@ -107,9 +109,10 @@ class Identity2(UserExpression):
 	def value_shape(self):
 		return (2,)
 
+def ccode(z):
+	return sp.printing.ccode(z)
 
 
-	
 #                                               input parameters, edges, bc, domains                                          
 
 
@@ -222,12 +225,12 @@ uu = TrialFunction (V)
 
 #                                                 calculating the deformation                                                    
 
-alpha = Constant((6.7,0.1225,-2.7e-2,2.8e-2))
+alpha = Constant((6.7,0.1225,1e-1,-1e-1))
 values = alpha.values()
-Ln2 = values[0]
-Delta = values[1]
-ab = values[2]
-at = values[3]
+Ln2 = Constant(6.7)
+Delta = Constant(0.1225)
+ab = Constant(0.1)
+at = Constant(-0.1)
 
 #Ln2 = Ln
 #Delta = 0.5*theta
@@ -332,12 +335,20 @@ print ("********** E = %f" % startE, flush=True)
 
 
 
+
+
 # calculating dual solution p
-print ("******* solving the dual equation:")
-solve (action(duduE,uu)==duE,p)
+#print ("******* solving the dual equation:")
+#solve (action(duduE,uu)==duE,p)
 
-#dJ = derivative(E,Control(alpha))
 
+#reduced_functional = ReducedFunctional(E, Ln2)
+#m_opt = minimize(reduced_functional, method = 'SLSQP')
+
+
+dl, dd, db, dt = compute_gradient(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+res = minimize (Ehat)
 
 
 
