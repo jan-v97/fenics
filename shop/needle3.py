@@ -7,7 +7,6 @@ from pyadjoint.overloaded_type import create_overloaded_object
 from math import *
 import numpy
 import scipy
-import sympy as sp
 
 tol= 1E-14
 
@@ -19,7 +18,7 @@ tol= 1E-14
 # data            Liste mit punktezahl-Dolfin Punkten     Angabe in Reihenfolge
 # deformation     string                                  Information über Deformation auf der Kante
 class edgeinput:
-	def __init__(self, data, deformation):
+	def __init__(self, data, deformation=0.):
 		self.pointnumber = len(data)
 		self.data = data;
 		self.deformation = deformation
@@ -121,30 +120,33 @@ Ln = 6.5
 L = 14.5
 Ll = 2.5
 Lr = L - Ln - Ll
-resolution = 150
+resolution = 100
 
 # input parameters for the twin structure
 theta = 0.25
 delta = 0.1
 
+# calculations
+cosdt = cos(atan2(delta*theta,1.))
+sindt = sin(atan2(delta*theta,1.))
 
 #                                                setting up the mesh                                                      
 
 
 # input edges
 edge_number = 14
-top_left = edgeinput([Point(0.,1.0),Point(-Ll, 1.0)],Expression(('x[0]','x[1]'), degree=1))
-top_mid = edgeinput([Point(Ln,1-0.5*theta),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-top_right = edgeinput([Point(Ln+Lr,1-0.5*theta),Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_top = edgeinput([Point(Ln+Lr,0.5*theta),Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_bottom = edgeinput([Point(Ln+Lr,-0.5*theta),Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-mid_right = edgeinput([Point(Ln,0.5*theta ),Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-mid_left = edgeinput([Point(0.,0.),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-mid_bottom = edgeinput([Point(0.,0.),Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-left = edgeinput([Point(-Ll,1.),Point(-Ll, 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_left = edgeinput([Point(-Ll,0.),Point(0., 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_mid = edgeinput([Point(0.,0.),Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-bottom_right = edgeinput([Point(Ln,-0.5*theta ),Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
+top_left = edgeinput([Point(0.,1.0),Point(-Ll, 1.0)])
+top_mid = edgeinput([Point(Ln,1-0.5*theta),Point(0., 1.)])
+top_right = edgeinput([Point(Ln+Lr,1-0.5*theta),Point(Ln, 1-0.5*theta)])
+right_top = edgeinput([Point(Ln+Lr,0.5*theta),Point(Ln+Lr, 1.-0.5*theta)])
+right_bottom = edgeinput([Point(Ln+Lr,-0.5*theta),Point(Ln+Lr, 0.5*theta)])
+mid_right = edgeinput([Point(Ln,0.5*theta ),Point(Ln+Lr,0.5*theta )])
+mid_left = edgeinput([Point(0.,0.),Point(0., 1.)])
+mid_bottom = edgeinput([Point(0.,0.),Point(Ln, 0.5*theta)])
+left = edgeinput([Point(-Ll,1.),Point(-Ll, 0.)])
+bottom_left = edgeinput([Point(-Ll,0.),Point(0., 0.)])
+bottom_mid = edgeinput([Point(0.,0.),Point(Ln,-0.5*theta )])
+bottom_right = edgeinput([Point(Ln,-0.5*theta ),Point(Ln+Lr,-0.5*theta )])
 
 # define a vector with the edges
 edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
@@ -171,6 +173,7 @@ for i in range(0, subdomain_number):
 mesh = generate_mesh (domain, resolution)
 mesh = create_overloaded_object(mesh)
 x = SpatialCoordinate(mesh)
+
 
 # defining coefficients on subdomains
 X = FunctionSpace (mesh, "DG", 0)
@@ -208,8 +211,6 @@ V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
 
-dx = Measure ('dx', domain=mesh)
-
 class DirichletBoundaryOpt (SubDomain):
 	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
 
@@ -224,22 +225,15 @@ p = Function (V, name='dual solution')
 v = TestFunction(V)
 uu = TrialFunction (V) 
 
-#                                                 calculating the deformation                                
+#                                                 calculating the deformation                                                    
+
+#********** [Ln2,Delta,ab,at] =  [ 6.70055834  0.02786897  0.09576149 -0.08563622]
+Ln2 = Constant(6.7)
+Delta = Constant(0.)
+ab = Constant(0.1)
+at = Constant(-0.1)
 
 
-Ln2 = Constant(6.699539702624442)
-Delta = Constant(0.002595250653204289)
-ab = Constant(0.09632226445852013)
-at = Constant(-0.004704696384824889)
-
-#Ln2 = Ln
-#Delta = 0.5*theta
-#ab = 0.
-#at = 0.
-
-# calculations
-cosdt = cos(atan2(delta*theta,1.))
-sindt = sin(atan2(delta*theta,1.))
 
 # redefine the boundary conditions
 top_left.deformation = project(as_vector((x[0]-sindt,1.)),W)
@@ -266,10 +260,10 @@ def boundary_mid_left(x, on_boundary):
 mid_bottom.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ,at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln))),W)
 def boundary_mid_bottom(x, on_boundary):
 	return on_polygon(x,mid_bottom)
-left.deformation = project(as_vector((x[0]-x[1]*sindt,x[1]*1.)),W)
+left.deformation = project(as_vector((x[0]-x[1]*sindt,x[1])),W)
 def boundary_left(x, on_boundary):
 	return on_polygon(x,left)
-bottom_left.deformation = project(as_vector((x[0],0.)),W)
+bottom_left.deformation = project(as_vector((x[0],x[1])),W)
 def boundary_bottom_left(x, on_boundary):
 	return on_polygon(x,bottom_left)
 bottom_mid.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt)),ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln))),W)
@@ -278,8 +272,6 @@ def boundary_bottom_mid(x, on_boundary):
 bottom_right.deformation = project(as_vector((x[0] + Ln2-Ln - (Delta-theta) * sindt,Delta-theta)),W)
 def boundary_bottom_right(x, on_boundary):
 	return on_polygon(x,bottom_right)
-
-
 
 # define a vector with the boundary conditions
 boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
@@ -299,10 +291,9 @@ psi=Function(W, name='psi')
 solve(lhs(a)==rhs(a), psi, bcs)
 
 # compute the displacement
-id = project(Identity2(),W)
-displacement_psi = project(psi-id,W)
-
-# T = grad (psi)
+id = project(Identity2(),V)
+dpsi = Function(V, name='dpsi')
+dpsi = project(psi-id,V)
 
 #                                                 end of calculating the deformation                       
 
@@ -324,19 +315,33 @@ Edens = energy_density (u, psi, G, a1, a2, a3, a4)
 E = Edens*dx
 
 # Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
-duE = derivative (E, u)
-dpsiduE = derivative (duE,psi)
 F = derivative (E, u, v)
-duduE = derivative (duE, u)
 
 
 print ("******* compute the elastic deformation:")
 solve (F == 0, u, bcsopt)
 startE = assemble(E)
-print ("********** E = %f" % startE, flush=True)
+print ("********** E_start = %f" % startE, flush=True)
 
+def iter_cb(m):
+	print ("m = ", m)
 
+def eval_cb(j, m):
+	print ("j = %f, m = %f." % (j, float(m)))
+	
+def derivative_cb(j, dj, m):
+	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
 
+dl, dd, db, dt = compute_gradient(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+h = [Constant(0.0001),Constant(0.0001),Constant(0.0001),Constant(0.0001)]
+#conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
+#Computed residuals: [1.6110796255681702e-10, 8.055763048608066e-11, 4.0279957341608826e-11, 2.0140850640401635e-11]
+#Computed convergence rates: [0.999934645383346, 0.9999590932213036, 0.9999375392098214]
+rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
+
+print (float(rLn2), float(rDelta),float(rab),float(rat)) 
+# 6.700851990542797 0.0025949206313023287 0.09556013899617283 -0.00462138746180401
 
 
 
@@ -344,6 +349,6 @@ print ("********** E = %f" % startE, flush=True)
 vtkfile = File('needle/const.pvd')
 vtkfile << chi_test
 vtkfile = File('needle/dpsi.pvd')
-vtkfile << displacement_psi
+vtkfile << dpsi
 vtkfile = File('needle/u.pvd')
 vtkfile << u
