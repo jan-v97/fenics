@@ -187,6 +187,7 @@ def sudom_fct (sudom_arr, vals, fctspace):
 chi_a = sudom_fct (sudom_arr, [0,1,0,1], X)
 chi_b = sudom_fct (sudom_arr, [0,0,1,0], X)
 chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
+chi_test2 = sudom_fct (sudom_arr, [1,0,0,0], X)
 
 
 
@@ -347,3 +348,5 @@ vtkfile = File('needle/dpsi.pvd')
 vtkfile << displacement_psi
 vtkfile = File('needle/u.pvd')
 vtkfile << u
+vtkfile = File('needle/test.pvd')
+vtkfile << chi_test2
