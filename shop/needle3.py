@@ -210,20 +210,9 @@ U = FunctionSpace (mesh, "CG", 1)
 V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
 W = VectorFunctionSpace(mesh, 'CG', 1)
 
-
-class DirichletBoundaryOpt (SubDomain):
-	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
-
-zero = Constant ((0,0))
-tip = DirichletBoundaryOpt()
-dbcopt = DirichletBC (V, zero, tip)
-bcsopt = [dbcopt]
-
-
 u = Function (V, name='displacement')
-p = Function (V, name='dual solution')
 v = TestFunction(V)
-uu = TrialFunction (V) 
+
 
 #                                                 calculating the deformation                                                    
 
@@ -291,9 +280,9 @@ psi=Function(W, name='psi')
 solve(lhs(a)==rhs(a), psi, bcs)
 
 # compute the displacement
-id = project(Identity2(),V)
-dpsi = Function(V, name='dpsi')
-dpsi = project(psi-id,V)
+id = project(Identity2(),W)
+dpsi = Function(W, name='dpsi')
+dpsi = project(psi-id,W)
 
 #                                                 end of calculating the deformation                       
 
@@ -301,23 +290,32 @@ GA = Constant (((1,delta), (0,1)))
 GB = Constant (((1,-delta), (0,1)))
 G = chi_a*GA + chi_b*GB
 
-S1 = Constant(((1,-delta*theta/sqrt(1+delta**2+theta**2)),(0,1/sqrt(1+delta**2+theta**2))))
 S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
 
 def energy_density (u, psi, G, a1, a2, a3, a4):
-	F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(G)
+	F = ( Identity(2) + grad(u)* inv(grad(psi)) ) * inv(G)
 	C = F.T*F
 	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
 
 
 # Total potential energy and derivatives
 Edens = energy_density (u, psi, G, a1, a2, a3, a4)
-E = Edens*dx
+#E = Edens*dx
+E = inner((Identity(2)+grad(u)* inv(grad(psi)))* inv(G),(Identity(2)+grad(u)* inv(grad(psi)))* inv(G))*dx
 
-# Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
+
+
+class DirichletBoundaryOpt (SubDomain):
+	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
+
+zero = Constant ((0,0))
+tip = DirichletBoundaryOpt()
+dbcopt = DirichletBC (V, zero, tip)
+bcsopt = [dbcopt]
+
+
+
 F = derivative (E, u, v)
-
-
 print ("******* compute the elastic deformation:")
 solve (F == 0, u, bcsopt)
 startE = assemble(E)
@@ -334,13 +332,17 @@ def derivative_cb(j, dj, m):
 
 dl, dd, db, dt = compute_gradient(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
 Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
-h = [Constant(0.0001),Constant(0.0001),Constant(0.0001),Constant(0.0001)]
-#conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
+#db = compute_gradient(assemble(E), Control(Ln2))
+#Ehat = ReducedFunctional(assemble(E), Control(Ln2))
+h = [Constant(1),Constant(1),Constant(1),Constant(1)]
+conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
+#h = Constant(0.01)
+#conv_rateL = taylor_test(Ehat, Ln2, h)
 #Computed residuals: [1.6110796255681702e-10, 8.055763048608066e-11, 4.0279957341608826e-11, 2.0140850640401635e-11]
 #Computed convergence rates: [0.999934645383346, 0.9999590932213036, 0.9999375392098214]
-rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
+#rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
 
-print (float(rLn2), float(rDelta),float(rab),float(rat)) 
+#print (float(rLn2), float(rDelta),float(rab),float(rat)) 
 # 6.700851990542797 0.0025949206313023287 0.09556013899617283 -0.00462138746180401
 
 

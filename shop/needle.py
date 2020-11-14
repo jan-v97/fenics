@@ -312,10 +312,10 @@ GB = Constant (((1,-delta), (0,1)))
 G = chi_a*GA + chi_b*GB
 
 S1 = Constant(((1,-delta*theta/sqrt(1+delta**2+theta**2)),(0,1/sqrt(1+delta**2+theta**2))))
-S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
+S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2*theta**2)),(0,0)))
 
 def energy_density (u, psi, G, a1, a2, a3, a4):
-	F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(G)
+	F = ( Identity(2) +S2 + grad(u)* inv(grad(psi)) ) * inv(G)
 	C = F.T*F
 	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
 
@@ -348,5 +348,3 @@ vtkfile = File('needle/dpsi.pvd')
 vtkfile << displacement_psi
 vtkfile = File('needle/u.pvd')
 vtkfile << u
-vtkfile = File('needle/test.pvd')
-vtkfile << chi_test2

@@ -31,5 +31,7 @@ print (assemble (E))
 
 da, db = compute_gradient (assemble (E), [Control (alpha), Control (beta)])
 Ehat = ReducedFunctional (assemble (E), [Control (alpha), Control (beta)])
-ra, rb = minimize (Ehat, method = "L-BFGS-B", bounds=[[0.1,0.1],[10,10]], tol=1e-12)
-print (1/float (ra), 1/float (rb)) # should converge to diagonal entries of vbar
+h = [Constant(0.001),Constant(0.001)]
+conv_rateL = taylor_test(Ehat, [alpha,beta], h)
+#ra, rb = minimize (Ehat, method = "L-BFGS-B", bounds=[[0.1,0.1],[10,10]], tol=1e-12)
+#print (1/float (ra), 1/float (rb)) # should converge to diagonal entries of vbar
