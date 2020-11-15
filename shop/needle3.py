@@ -8,7 +8,7 @@ from math import *
 import numpy
 import scipy
 
-tol= 1E-14
+tol= 1E-12
 
 #                                    defining classes for edges and domains                                       
 
@@ -199,7 +199,7 @@ a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
 
 class PeriodicBoundary (SubDomain):
 	# bottom boundary is target domain
-	def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
+	def inside (self, x, on_boundary): return bool ( (on_polygon(x,bottom_left) and on_boundary) or (on_polygon(x,bottom_mid) and on_boundary)  or (on_polygon(x,bottom_right) and on_boundary) )
 	# Map top boundary to bottom boundary
 	def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
 
@@ -217,11 +217,14 @@ v = TestFunction(V)
 #                                                 calculating the deformation                                                    
 
 #********** [Ln2,Delta,ab,at] =  [ 6.70055834  0.02786897  0.09576149 -0.08563622]
-Ln2 = Constant(6.7)
+#Ln2 = Constant(6.70055834)
+#Delta = Constant(0.02786897)
+#ab = Constant(0.09576149)
+#at = Constant(-0.08563622)
+Ln2 = Constant(6.5)
 Delta = Constant(0.)
 ab = Constant(0.1)
 at = Constant(-0.1)
-
 
 
 # redefine the boundary conditions
@@ -293,24 +296,22 @@ G = chi_a*GA + chi_b*GB
 S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
 
 def energy_density (u, psi, G, a1, a2, a3, a4):
-	F = ( Identity(2) + grad(u)* inv(grad(psi)) ) * inv(G)
+	F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(G)
 	C = F.T*F
 	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
 
 
 # Total potential energy and derivatives
 Edens = energy_density (u, psi, G, a1, a2, a3, a4)
-#E = Edens*dx
-E = inner((Identity(2)+grad(u)* inv(grad(psi)))* inv(G),(Identity(2)+grad(u)* inv(grad(psi)))* inv(G))*dx
+E = Edens*dx
+#E = inner((Identity(2)+grad(u)* inv(grad(psi)))* inv(G),(Identity(2)+grad(u)* inv(grad(psi)))* inv(G))*dx
 
 
-
-class DirichletBoundaryOpt (SubDomain):
-	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
+def boundary_opt(x, on_boundary):
+	return on_boundary and (near(x[0], 1, tol) and near(x[1], 1, tol))
 
 zero = Constant ((0,0))
-tip = DirichletBoundaryOpt()
-dbcopt = DirichletBC (V, zero, tip)
+dbcopt = DirichletBC (V, zero, boundary_mid_left)
 bcsopt = [dbcopt]
 
 
@@ -330,27 +331,28 @@ def eval_cb(j, m):
 def derivative_cb(j, dj, m):
 	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
 
-dl, dd, db, dt = compute_gradient(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+
+
 Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
-#db = compute_gradient(assemble(E), Control(Ln2))
-#Ehat = ReducedFunctional(assemble(E), Control(Ln2))
-h = [Constant(1),Constant(1),Constant(1),Constant(1)]
-conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
-#h = Constant(0.01)
-#conv_rateL = taylor_test(Ehat, Ln2, h)
-#Computed residuals: [1.6110796255681702e-10, 8.055763048608066e-11, 4.0279957341608826e-11, 2.0140850640401635e-11]
-#Computed convergence rates: [0.999934645383346, 0.9999590932213036, 0.9999375392098214]
-#rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
-
-#print (float(rLn2), float(rDelta),float(rab),float(rat)) 
-# 6.700851990542797 0.0025949206313023287 0.09556013899617283 -0.00462138746180401
+#h = [Constant(6.7),Constant(0.1),Constant(0.1),Constant(0.1)]
+#conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
 
 
+#Ehat = ReducedFunctional(assemble(E), [Control(Ln2)])
+#h = [Constant(1)]
+#conv_rateL = taylor_test(Ehat, [Ln2], h)
 
-# safe displacement
-vtkfile = File('needle/const.pvd')
-vtkfile << chi_test
-vtkfile = File('needle/dpsi.pvd')
-vtkfile << dpsi
-vtkfile = File('needle/u.pvd')
-vtkfile << u
+
+rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-12, options = {'disp': True}, callback = iter_cb)
+print (float(rLn2), float(rDelta),float(rab),float(rat)) 
+
+# 6.700537432753529 0.12190788144032681 0.1259716259443988 -0.1182322083335318
+# 6.9226108718467465 0.12166692814944795 0.13193280420666018 -0.12367586456003
+
+
+
+file = XDMFFile ("needle/file.xdmf")
+file.parameters["functions_share_mesh"] = True
+file.write(chi_test, 0)
+file.write(dpsi, 0)
+file.write(u, 0)
