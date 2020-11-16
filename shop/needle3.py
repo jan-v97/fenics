@@ -118,11 +118,11 @@ class Identity2(UserExpression):
 
 
 # input parameters for computational domain
-Ln = 6.7
-L = 14.5
+Ln = 7.
+Lr = 5
 Ll = 2.5
-Lr = L - Ln - Ll
-resolution = 200
+L = Ll + Ln + Lr
+resolution = 2**5
 
 # input parameters for the twin structure
 theta = 0.25
@@ -174,6 +174,7 @@ for i in range(0, subdomain_number):
 # generat the mesh
 mesh = generate_mesh (domain, resolution)
 mesh = create_overloaded_object(mesh)
+print ("Anzahl Knoten:", mesh.num_vertices())
 x = SpatialCoordinate(mesh)
 
 
@@ -194,6 +195,9 @@ chi_b = sudom_fct (sudom_arr, [0,0,1,0], X)
 chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
 
 
+file = XDMFFile ("needle/file.xdmf")
+file.parameters["functions_share_mesh"] = True
+file.write(chi_test, 0)
 
 #                                                 the programm                                                      
 
@@ -223,10 +227,10 @@ v = TestFunction(V)
 #Delta = Constant(0.12211615308229545)
 #ab = Constant(0.13241752024403333)
 #at = Constant(-0.12469109378042187)
-Ln2 = Constant(6.7)
-Delta = Constant(0.)
-ab = Constant(0.1)
-at = Constant(-0.1)
+Ln2 = Constant(6.)
+Delta = Constant(0.12)
+ab = Constant(0.)
+at = Constant(0.)
 
 
 # redefine the boundary conditions
@@ -344,12 +348,9 @@ Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),C
 
 #         Minimization                          
 rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-14, options = {'disp': True}, callback = iter_cb)
-print (float(rLn2), float(rDelta),float(rab),float(rat)) 
+print (float(rat),float(rab),float(rDelta),float(rLn2)) 
 
 
 
-file = XDMFFile ("needle/file.xdmf")
-file.parameters["functions_share_mesh"] = True
-file.write(chi_test, 0)
 file.write(dpsi, 0)
 file.write(u, 0)
