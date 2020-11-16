@@ -8,7 +8,7 @@ from math import *
 import numpy
 import scipy
 
-tol= 1E-12
+tol= 1E-14
 
 #                                    defining classes for edges and domains                                       
 
@@ -77,17 +77,20 @@ class subdomaininput:
 #                                     functions for defining edges                                           
 
 # check if a point x is on the edge
-def on_polygon(x,edge):
+def on_polygon(x,edge,closed=True):
 	for i in range(0,edge.pointnumber-1):
 		x0 = ((edge.data)[i]).x()
 		y0 = ((edge.data)[i]).y()
 		x1 = ((edge.data)[i+1]).x()
 		y1 = ((edge.data)[i+1]).y()
 		if (near(x[0],x0,tol) and near(x[1],y0,tol) or near(x[0],x1,tol) and near(x[1],y1,tol)):
-			return True
+			if closed:
+				return True
+			else: 
+				return False
 		if near(x1,x0,tol):
 			r = (x1 - x0) * (x[1] - y0) / (y1 - y0) + x0 - x[0] 
-			if (near(r, 0.0, tol) and (((x[1] >= y0) and (x[1] <= y1)) or ((x[1] >= y1) and (x[1] <= y0)))):
+			if (near(r, 0.0, tol) and (((x[1] >= y0) and (x[1] <= y1)) or ((x[1] >= y1) and (x[1] <=y0)))):
 				return True
 		else:
 			r = (y1 - y0) * (x[0] - x0) / (x1 - x0) + y0 - x[1]
@@ -95,6 +98,7 @@ def on_polygon(x,edge):
 				return True
 		#print ("( ", x0, " , ", y0, " ) ; ( ", x[0], " , ", x[1], " ) ; ( ", x1, " , ", y1, " )           return_val: ", result)
 	return False
+
 
 
 class Identity2(UserExpression):
@@ -108,19 +112,17 @@ class Identity2(UserExpression):
 	def value_shape(self):
 		return (2,)
 
-def ccode(z):
-	return sp.printing.ccode(z)
 
 
 #                                               input parameters, edges, bc, domains                                          
 
 
 # input parameters for computational domain
-Ln = 6.5
+Ln = 6.7
 L = 14.5
 Ll = 2.5
 Lr = L - Ln - Ll
-resolution = 100
+resolution = 200
 
 # input parameters for the twin structure
 theta = 0.25
@@ -216,12 +218,12 @@ v = TestFunction(V)
 
 #                                                 calculating the deformation                                                    
 
-#********** [Ln2,Delta,ab,at] =  [ 6.70055834  0.02786897  0.09576149 -0.08563622]
-#Ln2 = Constant(6.70055834)
-#Delta = Constant(0.02786897)
-#ab = Constant(0.09576149)
-#at = Constant(-0.08563622)
-Ln2 = Constant(6.5)
+#*** [Ln2,Delta,ab,at] =  [ 6.7122382510480305 0.12212716269775127 0.12890424602518877 -0.12134908102860356 ]
+#Ln2 = Constant(6.9454452738100185)
+#Delta = Constant(0.12211615308229545)
+#ab = Constant(0.13241752024403333)
+#at = Constant(-0.12469109378042187)
+Ln2 = Constant(6.7)
 Delta = Constant(0.)
 ab = Constant(0.1)
 at = Constant(-0.1)
@@ -233,34 +235,34 @@ def boundary_top_left(x, on_boundary):
 	return on_polygon(x,top_left)
 top_mid.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt,ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.)),W)
 def boundary_top_mid(x, on_boundary):
-	return on_polygon(x,top_mid)
+	return on_polygon(x,top_mid, closed=False)
 top_right.deformation = project(as_vector((x[0] + Ln2-Ln - (1.-theta+Delta) * sindt,1. - theta + Delta)),W)
 def boundary_top_right(x, on_boundary):
 	return on_polygon(x,top_right)
 right_top.deformation = project(as_vector((((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt,x[1]+ Delta-0.5*theta)),W)
 def boundary_right_top(x, on_boundary):
-	return on_polygon(x,right_top)
+	return on_polygon(x,right_top, closed=False)
 right_bottom.deformation = project(as_vector((((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt,x[1]+ Delta-0.5*theta)),W)
 def boundary_right_bottom(x, on_boundary):
-	return on_polygon(x,right_bottom)
+	return on_polygon(x,right_bottom, closed=False)
 mid_right.deformation = project(as_vector((x[0] + Ln2-Ln - Delta * sindt,Delta)),W)
 def boundary_mid_right(x, on_boundary):
 	return on_polygon(x,mid_right)
 mid_left.deformation = project(as_vector((-x[1]*sindt,x[1])),W)
 def boundary_mid_left(x, on_boundary):
-	return on_polygon(x,mid_left)
+	return on_polygon(x,mid_left, closed=False)
 mid_bottom.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ,at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln))),W)
 def boundary_mid_bottom(x, on_boundary):
-	return on_polygon(x,mid_bottom)
+	return on_polygon(x,mid_bottom, closed=False)
 left.deformation = project(as_vector((x[0]-x[1]*sindt,x[1])),W)
 def boundary_left(x, on_boundary):
-	return on_polygon(x,left)
+	return on_polygon(x,left, closed=False)
 bottom_left.deformation = project(as_vector((x[0],x[1])),W)
 def boundary_bottom_left(x, on_boundary):
 	return on_polygon(x,bottom_left)
 bottom_mid.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt)),ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln))),W)
 def boundary_bottom_mid(x, on_boundary):
-	return on_polygon(x,bottom_mid)
+	return on_polygon(x,bottom_mid, closed=False)
 bottom_right.deformation = project(as_vector((x[0] + Ln2-Ln - (Delta-theta) * sindt,Delta-theta)),W)
 def boundary_bottom_right(x, on_boundary):
 	return on_polygon(x,bottom_right)
@@ -334,20 +336,15 @@ def derivative_cb(j, dj, m):
 
 
 Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+
+#          Taylor Test:                 
 #h = [Constant(6.7),Constant(0.1),Constant(0.1),Constant(0.1)]
 #conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
+# Computed convergence rates: [1.9926588213190923, 1.9963152900677696, 1.9981529097186246]
 
-
-#Ehat = ReducedFunctional(assemble(E), [Control(Ln2)])
-#h = [Constant(1)]
-#conv_rateL = taylor_test(Ehat, [Ln2], h)
-
-
-rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-12, options = {'disp': True}, callback = iter_cb)
+#         Minimization                          
+rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-14, options = {'disp': True}, callback = iter_cb)
 print (float(rLn2), float(rDelta),float(rab),float(rat)) 
-
-# 6.700537432753529 0.12190788144032681 0.1259716259443988 -0.1182322083335318
-# 6.9226108718467465 0.12166692814944795 0.13193280420666018 -0.12367586456003
 
 
 

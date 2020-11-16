@@ -4,21 +4,21 @@
   <Domain>
     <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
       <Grid Name="mesh" GridType="Uniform">
-        <Topology NumberOfElements="5739" TopologyType="Triangle" NodesPerElement="3">
-          <DataItem Dimensions="5739 3" NumberType="UInt" Format="HDF">file.h5:/Mesh/0/mesh/topology</DataItem>
+        <Topology NumberOfElements="21815" TopologyType="Triangle" NodesPerElement="3">
+          <DataItem Dimensions="21815 3" NumberType="UInt" Format="HDF">file.h5:/Mesh/0/mesh/topology</DataItem>
         </Topology>
         <Geometry GeometryType="XY">
-          <DataItem Dimensions="3073 2" Format="HDF">file.h5:/Mesh/0/mesh/geometry</DataItem>
+          <DataItem Dimensions="11297 2" Format="HDF">file.h5:/Mesh/0/mesh/geometry</DataItem>
         </Geometry>
         <Time Value="0" />
         <Attribute Name="f_47" AttributeType="Scalar" Center="Cell">
-          <DataItem Dimensions="5739 1" Format="HDF">file.h5:/VisualisationVector/0</DataItem>
+          <DataItem Dimensions="21815 1" Format="HDF">file.h5:/VisualisationVector/0</DataItem>
         </Attribute>
         <Attribute Name="f_486" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="3073 3" Format="HDF">file.h5:/VisualisationVector/1</DataItem>
+          <DataItem Dimensions="11297 3" Format="HDF">file.h5:/VisualisationVector/1</DataItem>
         </Attribute>
         <Attribute Name="displacement" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="3073 3" Format="HDF">file.h5:/VisualisationVector/2</DataItem>
+          <DataItem Dimensions="11297 3" Format="HDF">file.h5:/VisualisationVector/2</DataItem>
         </Attribute>
       </Grid>
     </Grid>
