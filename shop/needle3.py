@@ -114,6 +114,7 @@ class Identity2(UserExpression):
 
 
 
+
 #                                               input parameters, edges, bc, domains                                          
 
 
@@ -122,7 +123,7 @@ Ln = 7.
 Lr = 5
 Ll = 2.5
 L = Ll + Ln + Lr
-resolution = 2**5
+resolution = 2**7
 
 # input parameters for the twin structure
 theta = 0.25
@@ -299,7 +300,8 @@ GA = Constant (((1,delta), (0,1)))
 GB = Constant (((1,-delta), (0,1)))
 G = chi_a*GA + chi_b*GB
 
-S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2+theta**2)),(0,0)))
+S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+(delta*theta)**2)),(0,0)))
+T = Expression(('((2*delta*theta-delta)/sqrt(1+delta*delta*theta*theta))*x[1]','0'),delta=delta,theta=theta,degree=2)
 
 def energy_density (u, psi, G, a1, a2, a3, a4):
 	F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(G)
@@ -348,9 +350,10 @@ Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),C
 
 #         Minimization                          
 rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-14, options = {'disp': True}, callback = iter_cb)
-print (float(rat),float(rab),float(rDelta),float(rLn2)) 
+print (float(rat)/float(rLn2)**2,float(rab)/float(rLn2)**2,float(rDelta),float(rLn2)) 
 
 
+#u = project (u + T, W)
 
 file.write(dpsi, 0)
 file.write(u, 0)
