@@ -368,12 +368,12 @@ print('{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, L
 
 
 datei = open('needle/ergebnisse.txt','a')
-datei.write("\n\n\n ***************    ")
+datei.write("\n ***************    ")
 datei.write(time.ctime())
-datei.write("     *************** \n")
-datei.write('\n{:^5} {:^5} {:^5} {:^9} {:^9} {:^9} {:^9}'.format('Ll','Ln','Lr', 'a1', 'a2', 'a3', 'a4'))
+datei.write("     *************** ")
+datei.write('\n\n{:^5} {:^5} {:^5} {:^9} {:^10} {:^9} {:^10}'.format('Ll','Ln','Lr', 'a1', 'a2', 'a3', 'a4'))
 datei.write('\n{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, Lr, a1, a2, a3, a4))
-datei.write('\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
+datei.write('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
 datei.close()
 
 for delta_i in delta:
@@ -387,7 +387,7 @@ for delta_i in delta:
 	print('{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
 	
 	datei = open('needle/ergebnisse.txt','a')
-	datei.write('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
+	datei.write('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}\n\n'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
 	datei.close()
 
 	file = XDMFFile ("needle/delta/delta_"+'{:1.2f}'.format(delta_i)+".xdmf")
