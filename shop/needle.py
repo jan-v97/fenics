@@ -351,15 +351,14 @@ Lr = 5
 Ll = 2.5
 L = Ll + Ln + Lr
 
-resolution = 2**7
+resolution = 2**10
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 
 # input parameters for the twin structure
 theta = 0.25
-delta = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.175,0.2]
-print (delta)
+delta = 0.1
 
 
 
@@ -368,29 +367,30 @@ print('{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, L
 
 
 datei = open('needle/ergebnisse.txt','a')
-datei.write("\n ***************    ")
+datei.write("\n\n\n ***************    ")
 datei.write(time.ctime())
 datei.write("     *************** ")
 datei.write('\n\n{:^5} {:^5} {:^5} {:^9} {:^10} {:^9} {:^10}'.format('Ll','Ln','Lr', 'a1', 'a2', 'a3', 'a4'))
 datei.write('\n{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, Lr, a1, a2, a3, a4))
-datei.write('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
+datei.write('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Delta', 'Ln2', 'time','theta', 'delta', 'res', 'verts', 'it'))
 datei.close()
 
-for delta_i in delta:
-	
+for i in range(0,1):
+	set_working_tape(Tape())
 	it = 0
 	start = time.time()
-	E_end,at, ab, Ln2, Delta, chi_test, dpsi, u,verts = do_shape_opt(Ln,Lr,Ll,resolution,delta_i,theta,a1,a2,a3,a4)
+	E_end,at, ab, Delta, Ln2, chi_test, dpsi, u,verts = do_shape_opt(Ln,Lr,Ll,resolution,delta,theta,a1,a2,a3,a4)
 	end = time.time()
 	
-	print('{:^10} {:^10} {:^10} {:^10} {:^10} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
-	print('{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
+	print('{:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Delta', 'Ln2', 'time','theta', 'delta', 'res', 'verts', 'it'))
+	print('{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Delta, Ln2, end-start,theta, delta, resolution, verts, it))
 	
 	datei = open('needle/ergebnisse.txt','a')
-	datei.write('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}\n\n'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
+	datei.write('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Delta, Ln2, end-start,theta, delta, resolution, verts, it))
 	datei.close()
 
-	file = XDMFFile ("needle/delta/delta_"+'{:1.2f}'.format(delta_i)+".xdmf")
+	#file = XDMFFile ("needle/delta/delta_"+'{:1.2f}'.format(delta_i)+".xdmf")
+	file = XDMFFile ("needle/file.xdmf")
 	file.parameters["functions_share_mesh"] = True
 	file.write(chi_test, 0)
 	file.write(dpsi, 0)
