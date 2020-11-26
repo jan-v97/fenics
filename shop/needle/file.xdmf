@@ -14,10 +14,10 @@
         <Attribute Name="f_47" AttributeType="Scalar" Center="Cell">
           <DataItem Dimensions="8873 1" Format="HDF">file.h5:/VisualisationVector/0</DataItem>
         </Attribute>
-        <Attribute Name="f_488" AttributeType="Vector" Center="Node">
+        <Attribute Name="f_29489" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="4714 3" Format="HDF">file.h5:/VisualisationVector/1</DataItem>
         </Attribute>
-        <Attribute Name="f_29088" AttributeType="Vector" Center="Node">
+        <Attribute Name="displacement" AttributeType="Vector" Center="Node">
           <DataItem Dimensions="4714 3" Format="HDF">file.h5:/VisualisationVector/2</DataItem>
         </Attribute>
       </Grid>

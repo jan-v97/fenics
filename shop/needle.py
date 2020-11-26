@@ -7,7 +7,7 @@ from pyadjoint.overloaded_type import create_overloaded_object
 from math import *
 import numpy
 import scipy
-import sympy as sp
+import time
 
 tol= 1E-14
 
@@ -19,7 +19,7 @@ tol= 1E-14
 # data            Liste mit punktezahl-Dolfin Punkten     Angabe in Reihenfolge
 # deformation     string                                  Information über Deformation auf der Kante
 class edgeinput:
-	def __init__(self, data, deformation):
+	def __init__(self, data, deformation=0.):
 		self.pointnumber = len(data)
 		self.data = data;
 		self.deformation = deformation
@@ -78,17 +78,20 @@ class subdomaininput:
 #                                     functions for defining edges                                           
 
 # check if a point x is on the edge
-def on_polygon(x,edge):
+def on_polygon(x,edge,closed=True):
 	for i in range(0,edge.pointnumber-1):
 		x0 = ((edge.data)[i]).x()
 		y0 = ((edge.data)[i]).y()
 		x1 = ((edge.data)[i+1]).x()
 		y1 = ((edge.data)[i+1]).y()
 		if (near(x[0],x0,tol) and near(x[1],y0,tol) or near(x[0],x1,tol) and near(x[1],y1,tol)):
-			return True
+			if closed:
+				return True
+			else: 
+				return False
 		if near(x1,x0,tol):
 			r = (x1 - x0) * (x[1] - y0) / (y1 - y0) + x0 - x[0] 
-			if (near(r, 0.0, tol) and (((x[1] >= y0) and (x[1] <= y1)) or ((x[1] >= y1) and (x[1] <= y0)))):
+			if (near(r, 0.0, tol) and (((x[1] >= y0) and (x[1] <= y1)) or ((x[1] >= y1) and (x[1] <=y0)))):
 				return True
 		else:
 			r = (y1 - y0) * (x[0] - x0) / (x1 - x0) + y0 - x[1]
@@ -96,7 +99,6 @@ def on_polygon(x,edge):
 				return True
 		#print ("( ", x0, " , ", y0, " ) ; ( ", x[0], " , ", x[1], " ) ; ( ", x1, " , ", y1, " )           return_val: ", result)
 	return False
-
 
 class Identity2(UserExpression):
 	def __init__(self, **kwargs):
@@ -109,242 +111,288 @@ class Identity2(UserExpression):
 	def value_shape(self):
 		return (2,)
 
-def ccode(z):
-	return sp.printing.ccode(z)
+
+#                                                setting up the mesh                                         
+def get_mesh(Ln,Lr,Ll,resolution,delta,theta):
+	cosdt = cos(atan2(delta*theta,1.))
+	sindt = sin(atan2(delta*theta,1.))
+
+	# input edges
+	top_left = edgeinput([Point(0.,1.0),Point(-Ll, 1.0)])
+	top_mid = edgeinput([Point(Ln,1-0.5*theta),Point(0., 1.)])
+	top_right = edgeinput([Point(Ln+Lr,1-0.5*theta),Point(Ln, 1-0.5*theta)])
+	right_top = edgeinput([Point(Ln+Lr,0.5*theta),Point(Ln+Lr, 1.-0.5*theta)])
+	right_bottom = edgeinput([Point(Ln+Lr,-0.5*theta),Point(Ln+Lr, 0.5*theta)])
+	mid_right = edgeinput([Point(Ln,0.5*theta ),Point(Ln+Lr,0.5*theta )])
+	mid_left = edgeinput([Point(0.,0.),Point(0., 1.)])
+	mid_bottom = edgeinput([Point(0.,0.),Point(Ln, 0.5*theta)])
+	left = edgeinput([Point(-Ll,1.),Point(-Ll, 0.)])
+	bottom_left = edgeinput([Point(-Ll,0.),Point(0., 0.)])
+	bottom_mid = edgeinput([Point(0.,0.),Point(Ln,-0.5*theta )])
+	bottom_right = edgeinput([Point(Ln,-0.5*theta ),Point(Ln+Lr,-0.5*theta )])
+
+	# define a vector with the edges
+	edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
+	edges_number = len(edges)
+
+	# input domain
+	domain_complete = subdomaininput([top_left,left,bottom_left, bottom_mid, bottom_right, right_bottom, right_top, top_right, top_mid],[0,0,0,0,0,0,0,0,0],0)
+
+	# input subdomains
+	domain_left = subdomaininput([top_left,left,bottom_left,mid_left],[0,0,0,0],0)
+	domain_top = subdomaininput([mid_bottom,mid_right,right_top,top_right,top_mid,mid_left],[0,0,0,0,0,1],0)
+	domain_bottom = subdomaininput([bottom_mid,bottom_right,right_bottom,mid_right,mid_bottom],[0,0,0,1,1],0)
+
+	# define vector of subdomains
+	subdomains = [domain_left,domain_top,domain_bottom]
+	subdomain_number = len(subdomains)
+
+	# defining the domain, and the subdomains
+	domain = Polygon(domain_complete.get_polygon())
+	for i in range(0, subdomain_number):
+		domain.set_subdomain (i+1, Polygon((subdomains[i]).get_polygon()))
+
+	# generat the mesh
+	mesh = generate_mesh (domain, resolution)
+	mesh = create_overloaded_object(mesh)
+	print ("Anzahl Knoten:", mesh.num_vertices())
+
+	# defining coefficients on subdomains
+	X = FunctionSpace (mesh, "DG", 0)
+	dm = X.dofmap()
+	sudom = MeshFunction ('size_t', mesh, 2, mesh.domains())
+	sudom_arr = numpy.asarray (sudom.array(), dtype=numpy.int)
+	for cell in cells (mesh): sudom_arr [dm.cell_dofs (cell.index())] = sudom [cell]
+
+	def sudom_fct (sudom_arr, vals, fctspace):
+		f = Function (fctspace)
+		f.vector()[:] = numpy.choose (sudom_arr, vals)
+		return f
+
+	chi_a = sudom_fct (sudom_arr, [0,1,0,1], X)
+	chi_b = sudom_fct (sudom_arr, [0,0,1,0], X)
+	chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
+	return mesh, edges, edges_number, chi_a, chi_b, chi_test,mesh.num_vertices()
 
 
-#                                               input parameters, edges, bc, domains                                          
+
+
+
+#                                                 calculating the deformation                                
+def get_deformation(Ln,Lr,Ll,resolution,delta,theta,Ln2,Delta,ab,at,edges,edges_number,W,x):
+	# redefine the boundary conditions
+	cosdt = cos(atan2(delta*theta,1.))
+	sindt = sin(atan2(delta*theta,1.))
+
+	edges[0].deformation = project(as_vector((x[0]-sindt,1.)),W)
+	def boundary_top_left(x, on_boundary):
+		return on_polygon(x,edges[0])
+
+	edges[1].deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt,ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.)),W)
+	def boundary_top_mid(x, on_boundary):
+		return on_polygon(x,edges[1], closed=False)
+
+	edges[2].deformation = project(as_vector((x[0] + Ln2-Ln - (1.-theta+Delta) * sindt,1. - theta + Delta)),W)
+	def boundary_top_right(x, on_boundary):
+		return on_polygon(x,edges[2])
+
+	edges[3].deformation = project(as_vector((((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt,x[1]+ Delta-0.5*theta)),W)
+	def boundary_right_top(x, on_boundary):
+		return on_polygon(x,edges[3], closed=False)
+
+	edges[4].deformation = project(as_vector((((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt,x[1]+ Delta-0.5*theta)),W)
+	def boundary_right_bottom(x, on_boundary):
+		return on_polygon(x,edges[4], closed=False)
+
+	edges[5].deformation = project(as_vector((x[0] + Ln2-Ln - Delta * sindt,Delta)),W)
+	def boundary_mid_right(x, on_boundary):
+		return on_polygon(x,edges[5])
+
+	edges[6].deformation = project(as_vector((-x[1]*sindt,x[1])),W)
+	def boundary_mid_left(x, on_boundary):
+		return on_polygon(x,edges[6], closed=False)
+
+	edges[7].deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ,at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln))),W)
+	def boundary_mid_bottom(x, on_boundary):
+		return on_polygon(x,edges[7], closed=False)
+
+	edges[8].deformation = project(as_vector((x[0]-x[1]*sindt,x[1])),W)
+	def boundary_left(x, on_boundary):
+		return on_polygon(x,edges[8], closed=False)
+
+	edges[9].deformation = project(as_vector((x[0],x[1])),W)
+	def boundary_bottom_left(x, on_boundary):
+		return on_polygon(x,edges[9])
+
+	edges[10].deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt)),ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln))),W)
+	def boundary_bottom_mid(x, on_boundary):
+		return on_polygon(x,edges[10], closed=False)
+
+	edges[11].deformation = project(as_vector((x[0] + Ln2-Ln - (Delta-theta) * sindt,Delta-theta)),W)
+	def boundary_bottom_right(x, on_boundary):
+		return on_polygon(x,edges[11])
+
+	# define a vector with the boundary conditions
+	boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
+
+	bcs = []
+	for i in range(0,edges_number):
+		bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
+		bcs.append(bc)
+
+
+	# compute the deformation 
+	print ("******* compute the deformation from computational domain to fundamental cell:")
+	psit=TrialFunction(W)
+	vt=TestFunction(W)
+	a = inner(grad(psit),grad(vt)) *dx
+	psi=Function(W, name='psi')
+	solve(lhs(a)==rhs(a), psi, bcs)
+
+	# compute the displacement
+	id = project(Identity2(),W)
+	dpsi = Function(W, name='dpsi')
+	dpsi = project(psi-id,W)
+	return psi,dpsi
+
+
+#                                                 the programm                                        
+def do_shape_opt(Ln,Lr,Ll,resolution,delta,theta,a1,a2,a3,a4):
+	mesh, edges, edges_number, chi_a, chi_b, chi_test, verts = get_mesh(Ln,Lr,Ll,resolution,delta,theta)
+	x = SpatialCoordinate(mesh)
+
+	class PeriodicBoundary (SubDomain):
+		# bottom boundary is target domain
+		def inside (self, x, on_boundary): return bool ( (on_polygon(x,edges[9]) and on_boundary) or	(on_polygon(x,edges[10]) and on_boundary)  or (on_polygon(x,edges[11]) and on_boundary) )
+		# Map top boundary to bottom boundary
+		def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
+
+	# create the function spaces
+	U = FunctionSpace (mesh, "CG", 1)
+	V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
+	W = VectorFunctionSpace(mesh, 'CG', 1)
+
+	u = Function (V, name='displacement')
+	v = TestFunction(V)
+
+	Ln2 = Constant(6.)
+	Delta = Constant(0.12)
+	ab = Constant(0.)
+	at = Constant(0.)
+
+	psi, dpsi = get_deformation(Ln,Lr,Ll,resolution,delta,theta,Ln2,Delta,ab,at,edges,edges_number,W,x)
+
+	GA = Constant (((1,delta), (0,1)))
+	GB = Constant (((1,-delta), (0,1)))
+	G = chi_a*GA + chi_b*GB
+
+	S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+(delta*theta)**2)),(0,0)))
+	#T = Expression(('((2*delta*theta-delta)/sqrt(1+delta*delta*theta*theta))*x[1]','0'),delta=delta,theta=theta,degree=2)
+
+	def energy_density (u, psi, G, a1, a2, a3, a4):
+		F = ( Identity(2) + S2 + grad(u)* inv(grad(psi)) ) * inv(G)
+		C = F.T*F
+		return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
+
+
+	# Total potential energy and derivatives
+	Edens = energy_density (u, psi, G, a1, a2, a3, a4)
+	E = Edens*dx
+	#E = inner((Identity(2)+grad(u)* inv(grad(psi)))* inv(G),(Identity(2)+grad(u)* inv(grad(psi)))* inv(G))*dx
+
+	def boundary_opt(x, on_boundary):
+		return near(x[0],0,tol) and (x[1]< 9/resolution)
+
+	zero = Constant ((0,0))
+	dbcopt = DirichletBC (V, zero, boundary_opt)
+	bcsopt = [dbcopt]
+
+	F = derivative (E, u, v)
+	print ("******* compute the elastic deformation:")
+	solve (F == 0, u, bcsopt)
+	startE = assemble(E)
+	print ("********** E_start = %f" % startE, flush=True)
+
+	def iter_cb(m):
+		global it
+		it = it + 1
+		print ("m = ", m)
+
+	#def eval_cb(j, m):
+	#	print ("j = %f, m = %f." % (j, float(m)))
+	
+	#def derivative_cb(j, dj, m):
+	#	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
+
+	Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),Control(at)])
+
+	#          Taylor Test:                 
+	#h = [Constant(6.7),Constant(0.1),Constant(0.1),Constant(0.1)]
+	#conv_rateL = taylor_test(Ehat, [Ln2,Delta,ab,at], h)
+	# Computed convergence rates: [1.9926588213190923, 1.9963152900677696, 1.9981529097186246]
+
+	#         Minimization                          
+	rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-14, options = {'disp': True}, callback = iter_cb)
+	
+	psi, dpsi = get_deformation(Ln,Lr,Ll,resolution,delta,theta,float(rLn2),float(rDelta),float(rab),float(rat),edges,edges_number,W,x)
+	u_end = Function (V, name='displacement')
+	energy2 = energy_density (u_end, psi, G, a1, a2, a3, a4)*dx
+	F2 = derivative (energy2, u_end, v)
+	solve (F2 == 0, u_end, bcsopt)
+	E_end = assemble(energy_density (u_end, psi, G, a1, a2, a3, a4)*dx)
+	return E_end,float(rat)/float(rLn2)**2,float(rab)/float(rLn2)**2,float(rDelta),float(rLn2), chi_test,dpsi,u,verts
+
+#                                               input parameters, edges, bc, domains                         
 
 
 # input parameters for computational domain
-Ln = 6.5
-L = 14.5
+Ln = 7.
+Lr = 5
 Ll = 2.5
-Lr = L - Ln - Ll
-resolution = 150
+L = Ll + Ln + Lr
+
+resolution = 2**7
+
+# parameters for elastic energy
+a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 
 # input parameters for the twin structure
 theta = 0.25
-delta = 0.1
-
-
-#                                                setting up the mesh                                                      
-
-
-# input edges
-edge_number = 14
-top_left = edgeinput([Point(0.,1.0),Point(-Ll, 1.0)],Expression(('x[0]','x[1]'), degree=1))
-top_mid = edgeinput([Point(Ln,1-0.5*theta),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-top_right = edgeinput([Point(Ln+Lr,1-0.5*theta),Point(Ln, 1-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_top = edgeinput([Point(Ln+Lr,0.5*theta),Point(Ln+Lr, 1.-0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-right_bottom = edgeinput([Point(Ln+Lr,-0.5*theta),Point(Ln+Lr, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-mid_right = edgeinput([Point(Ln,0.5*theta ),Point(Ln+Lr,0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-mid_left = edgeinput([Point(0.,0.),Point(0., 1.)],Expression(('x[0]','x[1]'), degree=1))
-mid_bottom = edgeinput([Point(0.,0.),Point(Ln, 0.5*theta)],Expression(('x[0]','x[1]'), degree=1))
-left = edgeinput([Point(-Ll,1.),Point(-Ll, 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_left = edgeinput([Point(-Ll,0.),Point(0., 0.)],Expression(('x[0]','x[1]'), degree=1))
-bottom_mid = edgeinput([Point(0.,0.),Point(Ln,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-bottom_right = edgeinput([Point(Ln,-0.5*theta ),Point(Ln+Lr,-0.5*theta )],Expression(('x[0]','x[1]'), degree=1))
-
-# define a vector with the edges
-edges = [top_left,top_mid,top_right,right_top,right_bottom,mid_right,mid_left,mid_bottom,left,bottom_left,bottom_mid,bottom_right]
-edges_number = len(edges)
-
-# input domain
-domain_complete = subdomaininput([top_left,left,bottom_left, bottom_mid, bottom_right, right_bottom, right_top, top_right, top_mid],[0,0,0,0,0,0,0,0,0],0)
-
-# input subdomains
-domain_left = subdomaininput([top_left,left,bottom_left,mid_left],[0,0,0,0],0)
-domain_top = subdomaininput([mid_bottom,mid_right,right_top,top_right,top_mid,mid_left],[0,0,0,0,0,1],0)
-domain_bottom = subdomaininput([bottom_mid,bottom_right,right_bottom,mid_right,mid_bottom],[0,0,0,1,1],0)
-
-# define vector of subdomains
-subdomains = [domain_left,domain_top,domain_bottom]
-subdomain_number = len(subdomains)
-
-# defining the domain, and the subdomains
-domain = Polygon(domain_complete.get_polygon())
-for i in range(0, subdomain_number):
-	domain.set_subdomain (i+1, Polygon((subdomains[i]).get_polygon()))
-
-# generat the mesh
-mesh = generate_mesh (domain, resolution)
-mesh = create_overloaded_object(mesh)
-x = SpatialCoordinate(mesh)
-
-# defining coefficients on subdomains
-X = FunctionSpace (mesh, "DG", 0)
-dm = X.dofmap()
-sudom = MeshFunction ('size_t', mesh, 2, mesh.domains())
-sudom_arr = numpy.asarray (sudom.array(), dtype=numpy.int)
-for cell in cells (mesh): sudom_arr [dm.cell_dofs (cell.index())] = sudom [cell]
-
-def sudom_fct (sudom_arr, vals, fctspace):
-    f = Function (fctspace)
-    f.vector()[:] = numpy.choose (sudom_arr, vals)
-    return f
-
-chi_a = sudom_fct (sudom_arr, [0,1,0,1], X)
-chi_b = sudom_fct (sudom_arr, [0,0,1,0], X)
-chi_test = sudom_fct (sudom_arr, [0,1,2,1], X)
-chi_test2 = sudom_fct (sudom_arr, [1,0,0,0], X)
+delta = [0.01,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.11,0.12,0.13,0.14,0.15,0.175,0.2]
+print (delta)
 
 
 
-#                                                 the programm                                                      
-
-a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
-
-class PeriodicBoundary (SubDomain):
-	# bottom boundary is target domain
-	def inside (self, x, on_boundary): return bool (near (x[1], 0.) and on_boundary)
-	# Map top boundary to bottom boundary
-	def map (self, x, y): y[0] = x[0]; y[1] = x[1]-1.0
+print('{:^5} {:^5} {:^5} {:^9} {:^9} {:^9} {:^9}'.format('Ll','Ln','Lr', 'a1', 'a2', 'a3', 'a4'))
+print('{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, Lr, a1, a2, a3, a4))
 
 
+datei = open('needle/ergebnisse.txt','a')
+datei.write("\n\n\n ***************    ")
+datei.write(time.ctime())
+datei.write("     *************** \n")
+datei.write('\n{:^5} {:^5} {:^5} {:^9} {:^9} {:^9} {:^9}'.format('Ll','Ln','Lr', 'a1', 'a2', 'a3', 'a4'))
+datei.write('\n{:1.3f} {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(Ll, Ln, Lr, a1, a2, a3, a4))
+datei.write('\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
+datei.close()
 
-# create the function spaces
-U = FunctionSpace (mesh, "CG", 1)
-V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
-W = VectorFunctionSpace(mesh, 'CG', 1)
+for delta_i in delta:
+	
+	it = 0
+	start = time.time()
+	E_end,at, ab, Ln2, Delta, chi_test, dpsi, u,verts = do_shape_opt(Ln,Lr,Ll,resolution,delta_i,theta,a1,a2,a3,a4)
+	end = time.time()
+	
+	print('{:^10} {:^10} {:^10} {:^10} {:^10} {:^10} {:^5} {:^5} {:^10} {:^10} {:^3}'.format('E_end', 'at', 'ab', 'Ln2', 'Delta', 'time','theta', 'delta', 'res', 'verts', 'it'))
+	print('{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
+	
+	datei = open('needle/ergebnisse.txt','a')
+	datei.write('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:1.3f} {:1.3f} {:10d} {:10d} {:3d}'.format(E_end, at, ab, Ln2, Delta, end-start,theta, delta_i, resolution, verts, it))
+	datei.close()
 
-
-dx = Measure ('dx', domain=mesh)
-
-class DirichletBoundaryOpt (SubDomain):
-	def inside (self, x, on_boundary): return bool ((fabs(x[0]) < 4*tol) and (fabs(x[0]) < 4*tol))
-
-zero = Constant ((0,0))
-tip = DirichletBoundaryOpt()
-dbcopt = DirichletBC (V, zero, tip)
-bcsopt = [dbcopt]
-
-
-u = Function (V, name='displacement')
-p = Function (V, name='dual solution')
-v = TestFunction(V)
-uu = TrialFunction (V) 
-
-#                                                 calculating the deformation                                
-
-
-Ln2 = Constant(6.699539702624442)
-Delta = Constant(0.002595250653204289)
-ab = Constant(0.09632226445852013)
-at = Constant(-0.004704696384824889)
-
-#Ln2 = Ln
-#Delta = 0.5*theta
-#ab = 0.
-#at = 0.
-
-# calculations
-cosdt = cos(atan2(delta*theta,1.))
-sindt = sin(atan2(delta*theta,1.))
-
-# redefine the boundary conditions
-top_left.deformation = project(as_vector((x[0]-sindt,1.)),W)
-def boundary_top_left(x, on_boundary):
-	return on_polygon(x,top_left)
-top_mid.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt))  -  sindt,ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln)  +  1.)),W)
-def boundary_top_mid(x, on_boundary):
-	return on_polygon(x,top_mid)
-top_right.deformation = project(as_vector((x[0] + Ln2-Ln - (1.-theta+Delta) * sindt,1. - theta + Delta)),W)
-def boundary_top_right(x, on_boundary):
-	return on_polygon(x,top_right)
-right_top.deformation = project(as_vector((((x[1]-0.5*theta)/(1-theta)) *  (  -sindt*(1-theta) )  +  Ln2+Lr-Delta*sindt,x[1]+ Delta-0.5*theta)),W)
-def boundary_right_top(x, on_boundary):
-	return on_polygon(x,right_top)
-right_bottom.deformation = project(as_vector((((x[1]+0.5*theta)/(theta)) *  (  -sindt*(theta) )  +  Ln2+Lr-(Delta-theta)*sindt,x[1]+ Delta-0.5*theta)),W)
-def boundary_right_bottom(x, on_boundary):
-	return on_polygon(x,right_bottom)
-mid_right.deformation = project(as_vector((x[0] + Ln2-Ln - Delta * sindt,Delta)),W)
-def boundary_mid_right(x, on_boundary):
-	return on_polygon(x,mid_right)
-mid_left.deformation = project(as_vector((-x[1]*sindt,x[1])),W)
-def boundary_mid_left(x, on_boundary):
-	return on_polygon(x,mid_left)
-mid_bottom.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta) * sindt)) ,at*(x[0]/Ln)*(x[0]/Ln)  +  (Delta  - at)  *  (x[0]/Ln))),W)
-def boundary_mid_bottom(x, on_boundary):
-	return on_polygon(x,mid_bottom)
-left.deformation = project(as_vector((x[0]-x[1]*sindt,x[1]*1.)),W)
-def boundary_left(x, on_boundary):
-	return on_polygon(x,left)
-bottom_left.deformation = project(as_vector((x[0],0.)),W)
-def boundary_bottom_left(x, on_boundary):
-	return on_polygon(x,bottom_left)
-bottom_mid.deformation = project(as_vector(((x[0]/Ln)  *  ((Ln2 - (Delta-theta) * sindt)),ab*(x[0]/Ln)*(x[0]/Ln)  +  (Delta-theta  - ab)  *  (x[0]/Ln))),W)
-def boundary_bottom_mid(x, on_boundary):
-	return on_polygon(x,bottom_mid)
-bottom_right.deformation = project(as_vector((x[0] + Ln2-Ln - (Delta-theta) * sindt,Delta-theta)),W)
-def boundary_bottom_right(x, on_boundary):
-	return on_polygon(x,bottom_right)
-
-
-
-# define a vector with the boundary conditions
-boundary_edges = [boundary_top_left,boundary_top_mid,boundary_top_right,boundary_right_top,boundary_right_bottom,boundary_mid_right,boundary_mid_left,boundary_mid_bottom,boundary_left,boundary_bottom_left,boundary_bottom_mid,boundary_bottom_right]
-
-bcs = []
-for i in range(0,edges_number):
-	bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
-	bcs.append(bc)
-
-
-# compute the deformation 
-print ("******* compute the deformation from computational domain to fundamental cell:")
-psit=TrialFunction(W)
-vt=TestFunction(W)
-a = inner(grad(psit),grad(vt)) *dx
-psi=Function(W, name='psi')
-solve(lhs(a)==rhs(a), psi, bcs)
-
-# compute the displacement
-id = project(Identity2(),W)
-displacement_psi = project(psi-id,W)
-
-# T = grad (psi)
-
-#                                                 end of calculating the deformation                       
-
-GA = Constant (((1,delta), (0,1)))
-GB = Constant (((1,-delta), (0,1)))
-G = chi_a*GA + chi_b*GB
-
-S1 = Constant(((1,-delta*theta/sqrt(1+delta**2+theta**2)),(0,1/sqrt(1+delta**2+theta**2))))
-S2 = Constant(((0,(2*delta*theta-delta)/sqrt(1+delta**2*theta**2)),(0,0)))
-
-def energy_density (u, psi, G, a1, a2, a3, a4):
-	F = ( Identity(2) +S2 + grad(u)* inv(grad(psi)) ) * inv(G)
-	C = F.T*F
-	return (a1*(tr(C))**2 + a2*det(C) - a3*ln(det(C)) + a4*(C[0,0]**2+C[1,1]**2) - (4*a1+a2+2*a4))*abs(det(grad(psi)))
-
-
-# Total potential energy and derivatives
-Edens = energy_density (u, psi, G, a1, a2, a3, a4)
-E = Edens*dx
-
-# Derivatives (directions are nameless, so they can be test function implicitly, use action() to plug in a trial function)
-duE = derivative (E, u)
-dpsiduE = derivative (duE,psi)
-F = derivative (E, u, v)
-duduE = derivative (duE, u)
-
-
-print ("******* compute the elastic deformation:")
-solve (F == 0, u, bcsopt)
-startE = assemble(E)
-print ("********** E = %f" % startE, flush=True)
-
-
-
-
-
-
-# safe displacement
-vtkfile = File('needle/const.pvd')
-vtkfile << chi_test
-vtkfile = File('needle/dpsi.pvd')
-vtkfile << displacement_psi
-vtkfile = File('needle/u.pvd')
-vtkfile << u
+	file = XDMFFile ("needle/delta/delta_"+'{:1.2f}'.format(delta_i)+".xdmf")
+	file.parameters["functions_share_mesh"] = True
+	file.write(chi_test, 0)
+	file.write(dpsi, 0)
+	file.write(u, 0)
+	file.close()

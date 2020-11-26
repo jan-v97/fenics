@@ -202,7 +202,7 @@ file.write(chi_test, 0)
 
 #                                                 the programm                                                      
 
-a1=11.56; a2=-17.44; a3=10.04; a4=-9.38
+a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 
 class PeriodicBoundary (SubDomain):
 	# bottom boundary is target domain
@@ -314,12 +314,11 @@ Edens = energy_density (u, psi, G, a1, a2, a3, a4)
 E = Edens*dx
 #E = inner((Identity(2)+grad(u)* inv(grad(psi)))* inv(G),(Identity(2)+grad(u)* inv(grad(psi)))* inv(G))*dx
 
-
 def boundary_opt(x, on_boundary):
-	return on_boundary and (near(x[0], 1, tol) and near(x[1], 1, tol))
+	return near(x[0],0,tol) and (x[1]< 9/resolution)
 
 zero = Constant ((0,0))
-dbcopt = DirichletBC (V, zero, boundary_mid_left)
+dbcopt = DirichletBC (V, zero, boundary_opt)
 bcsopt = [dbcopt]
 
 
@@ -350,7 +349,7 @@ Ehat = ReducedFunctional(assemble(E), [Control(Ln2),Control(Delta),Control(ab),C
 
 #         Minimization                          
 rLn2, rDelta, rab, rat = minimize (Ehat, method = 'SLSQP', tol = 1e-14, options = {'disp': True}, callback = iter_cb)
-print (float(rat)/float(rLn2)**2,float(rab)/float(rLn2)**2,float(rDelta),float(rLn2)) 
+print (assemble(E),float(rat)/float(rLn2)**2,float(rab)/float(rLn2)**2,float(rDelta),float(rLn2)) 
 
 
 #u = project (u + T, W)

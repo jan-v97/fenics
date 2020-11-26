@@ -1,0 +1,6 @@
+
+ ***************    Thu Nov 26 17:08:27 2020     *************** 
+
+ Ll    Ln    Lr      a1        a2        a3        a4    
+2.500 7.000 5.000 11.562724 -17.437087 10.062913 -9.375448
+     E_end            at              ab              Ln2            Delta           time       theta delta    res       verts    it 
