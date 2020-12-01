@@ -340,6 +340,7 @@ def do_shape_opt(Ln,Lr,Ll,resolution,delta,theta,a1,a2,a3,a4):
 	F2 = derivative (energy2, u_end, v)
 	solve (F2 == 0, u_end, bcsopt)
 	E_end = assemble(energy_density (u_end, psi, G, a1, a2, a3, a4)*dx)
+
 	return E_end,float(rat)/float(rLn2)**2,float(rab)/float(rLn2)**2,float(rDelta),float(rLn2), chi_test,dpsi,u,verts
 
 #                                               input parameters, edges, bc, domains                         
@@ -351,7 +352,7 @@ Lr = 5
 Ll = 2.5
 L = Ll + Ln + Lr
 
-resolution = 2**10
+resolution = 2**7
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
