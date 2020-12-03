@@ -97,7 +97,7 @@ def on_polygon(x,edge,closed='c'):
 				return False
 		# x near(x1,y1)
 		elif (near(x[0],x1,tol) and near(x[1],y1,tol)):
-			if closed:
+			if (closed=='c'):
 				return True
 			elif (closed =='h'):
 				return False
@@ -210,15 +210,15 @@ def get_mesh(L1,L2,theta_t,theta_r,phi,resolution):
 
 
 #                                                 calculating the deformation                                
-def get_deformation(L1,L2,theta_t,theta_r,phi,resolution,delta_t,delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x):
+def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x):
 	#calculations
-	rho = cos(0.5*pi-atan(1./3.)-2*phi)*sqrt(0.75*0.75+0.25*0.25)
+	rho = cos(0.5*pi-atan(1./3.)-alpha)*sqrt(0.75*0.75+0.25*0.25)
 	hr = cos(phi)-sin(phi)
-	cos2phi = cos(2*phi)
-	sin2phi = sin(2*phi)
+	cos2phi = cos(alpha)
+	sin2phi = sin(alpha)
 	cosphi = cos(phi)
 	sinphi = sin(phi)
-	tangens = hr/tan(0.25*pi-phi)
+	tangens = hr/tan(0.25*pi-alpha+phi)
 
 	edges[0].deformation = project(as_vector((((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  (rho+Lt)*sin2phi+(delta_t+hr)*cos2phi-cosphi-sinphi  -  ((rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi))  +  (rho+Lt+L2-tangens*(1-theta_t))*sin2phi+delta_t*cos2phi,((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  (rho+Lt)*cos2phi-(delta_t+hr)*sin2phi-cosphi+sinphi  -  ((rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi))  +  (rho+Lt+L2-tangens*(1-theta_t))*cos2phi-delta_t*sin2phi)),W)
 	def boundary_lt(x, on_boundary):
@@ -318,15 +318,15 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,resolution,delta_t,delta_r,Lt,Lr,p
 
 
 #                                                 the programm                                        
-def do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4):
+def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl):
 	#calculations
-	rho = cos(0.5*pi-atan(1./3.)-2*phi)*sqrt(0.75*0.75+0.25*0.25)
+	rho = cos(0.5*pi-atan(1./3.)-alpha)*sqrt(0.75*0.75+0.25*0.25)
 	hr = cos(phi)-sin(phi)
-	cos2phi = cos(2*phi)
-	sin2phi = sin(2*phi)
+	cos2phi = cos(alpha)
+	sin2phi = sin(alpha)
 	cosphi = cos(phi)
 	sinphi = sin(phi)
-	tangens = hr/tan(0.25*pi-phi)
+	tangens = hr/tan(0.25*pi-alpha+phi)
 
 	mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d, chi_test, verts = get_mesh(L1,L2,theta_t,theta_r,phi,resolution)
 	x = SpatialCoordinate(mesh)
@@ -349,28 +349,28 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4):
 
 	#parameters for the shape optimization
 	#shift of needles
-	Delta_t = Constant(0.)
-	Delta_r = Constant(0.)
+	Delta_t = Constant(sDelta_t)
+	Delta_r = Constant(sDelta_r)
 	#stretching of needle
-	Lt = Constant(L1)
-	Lr = Constant(L1)
+	Lt = Constant(sLt)
+	Lr = Constant(sLt)
 	#displacement of midpoint
-	pt = Constant(0.)
-	pr = Constant(0.)
+	pt = Constant(spt)
+	pr = Constant(spr)
 	#quadratic parameters
-	tc1 = Constant(0.)
-	tc2 = Constant(0.)
-	tc3 = Constant(0.)
-	tc4 = Constant(0.)
-	tlb = Constant(0.)
-	tbl = Constant(0.)
+	tc1 = Constant(stc1)
+	tc2 = Constant(stc2)
+	tc3 = Constant(stc3)
+	tc4 = Constant(stc4)
+	tlb = Constant(stlb)
+	tbl = Constant(stbl)
 
-	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,resolution,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x)
+	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x)
 
-	GA = Constant (((1,0.1),(0,1)))
-	GB = Constant (((1,-0.1),(0,1)))
-	GC = Constant (((1,0),(0.1,1)))
-	GD = Constant (((1,0),(-0.1,1)))
+	GA = Constant (((cos(0.5*pi-2*phi),0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)),(sin(0.5*pi-2*phi),0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi))))
+	GB = Constant (((cos(0.5*pi-2*phi),-0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)),(sin(0.5*pi-2*phi),-0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi))))
+	GC = Constant (((1,0.1),(0,1)))
+	GD = Constant (((1,-0.1),(0,1)))
 	G = chi_a*GA+chi_b*GB+ chi_c*GC+ chi_d*GD
 
 
@@ -408,11 +408,16 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4):
 	
 	#def derivative_cb(j, dj, m):
 	#	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
+
 	Ehat = ReducedFunctional(assemble(E), [Control(Delta_t),Control(Delta_r),Control(Lt),Control(Lr),Control(pt),Control(pr),Control(tc1),Control(tc2),Control(tc3),Control(tc4),Control(tlb),Control(tbl)])
 
 	#          Taylor Test:                 
-	h = [Constant(6.7),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
-	conv_rateL = taylor_test(Ehat, [Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl], h)
+	#Ehat = ReducedFunctional(assemble(E), [Control(Lt)])
+	#h = [Constant(0.1)]
+	#conv_rateL = taylor_test(Ehat, [Lt], h)
+
+	#h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
+	#conv_rateL = taylor_test(Ehat, [Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl], h)
 	# Computed convergence rates: [1.942568351785441, 1.989259352956199, 2.028272338072]
 
 	#         Minimization                          
@@ -420,7 +425,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4):
 	rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
 	#rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
 	
-	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,resolution,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),edges,edges_number,W,x)
+	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),edges,edges_number,W,x)
 	u_end = Function (V, name='displacement')
 	energy2 = energy_density (u_end, psi, G, a1, a2, a3, a4)*dx
 	F2 = derivative (energy2, u_end, v)
@@ -436,7 +441,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4):
 # input parameters for computational domain
 L1 = 2.
 L2 = 2.
-resolution = 2**7
+resolution = 2**6
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
@@ -445,10 +450,80 @@ a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 theta_t = 0.6
 theta_r = 0.4
 phi = 0.05*pi
+alpha = 0.1*pi
+
+
+#startparameters for the shape optimization
+#shift of needles
+sDelta_t = 0.
+sDelta_r = 0.
+#stretching of needle
+sLt = L1
+sLr = L1
+#displacement of midpoint
+spt = 0.
+spr = 0.
+#quadratic parameters
+stc1 = 0.
+stc2 = 0.
+stc3 = 0.
+stc4 = 0.
+stlb = 0.
+stbl = 0.
+
+
+print("\n\n\n ***************    ")
+print(time.ctime())
+print("     *************** ")
+print('\n  parameters for computational domain and elasticity')
+print('\n{:^5} {:^5} {:^9} {:^10} {:^9} {:^10}'.format('L1','L2','a1', 'a2', 'a3', 'a4'))
+print('\n{:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(L1, L2, a1, a2, a3, a4))
+print('\n  parameters for the twin structure')
+print('\n{:^7} {:^7} {:^7} {:^7}'.format('theta_t','theta_r','phi', 'alpha'))
+print('\n{:1.5f} {:1.5f} {:1.5f} {:1.5f}'.format(theta_t,theta_r,phi,alpha))
+print('\n  starting parameters for shape optimization')
+print('\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15}'.format('Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl'))
+print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
 
 
 
-E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,resolution,a1,a2,a3,a4)
+
+
+
+datei = open('needles/ergebnisse.txt','a')
+datei.write("\n\n\n ***************    ")
+datei.write(time.ctime())
+datei.write("     *************** ")
+datei.write('\n\n  parameters for computational domain and elasticity')
+datei.write('\n    {:^5} {:^5} {:^9} {:^10} {:^9} {:^10}'.format('L1','L2','a1', 'a2', 'a3', 'a4'))
+datei.write('\n    {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(L1, L2, a1, a2, a3, a4))
+datei.write('\n\n  parameters for the twin structure')
+datei.write('\n    {:^7} {:^7} {:^7} {:^7}'.format('theta_t','theta_r','phi', 'alpha'))
+datei.write('\n    {:1.5f} {:1.5f} {:1.5f} {:1.5f}'.format(theta_t,theta_r,phi,alpha))
+datei.write('\n\n  starting parameters for shape optimization')
+datei.write('\n    {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15}'.format('Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl'))
+datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
+datei.write('\n\n  results of shape optimization and details')
+datei.write('\n    {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
+datei.close()
+
+
+
+set_working_tape(Tape())
+it = 0
+
+start = time.time()
+E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl)
+end = time.time()
+
+print('\n  results of shape optimization and details')
+print('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
+print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,res,verts,it))
+
+
+datei = open('needles/ergebnisse.txt','a')
+datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,res,verts,it))
+datei.close()
 
 
 # safe displacement

@@ -1,0 +1,19 @@
+
+
+
+ ***************    Thu Dec  3 19:21:10 2020     *************** 
+
+  parameters for computational domain and elasticity
+     L1    L2      a1         a2        a3         a4    
+    2.000 2.000 11.562724 -17.437087 10.062913 -9.375448
+
+  parameters for the twin structure
+    theta_t theta_r   phi    alpha 
+    0.60000 0.40000 0.15708 0.31416
+
+  starting parameters for shape optimization
+        Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl      
+    0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 
+
+  results of shape optimization and details
+         E_end          Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl          time       res       verts    it 
