@@ -125,7 +125,8 @@ class Identity2(UserExpression):
 	def value_shape(self):
 		return (2,)
 
-
+def array_to_const_mat(G):
+	return Constant(((G[0][0],G[0][1]),(G[1][0],G[1][1])))
 
 
 	
@@ -318,7 +319,7 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 
 
 #                                                 the programm                                        
-def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl):
+def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb):
 	#calculations
 	rho = cos(0.5*pi-atan(1./3.)-alpha)*sqrt(0.75*0.75+0.25*0.25)
 	hr = cos(phi)-sin(phi)
@@ -367,10 +368,10 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 
 	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x)
 
-	GA = Constant (((cos(0.5*pi-2*phi),0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)),(sin(0.5*pi-2*phi),0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi))))
-	GB = Constant (((cos(0.5*pi-2*phi),-0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)),(sin(0.5*pi-2*phi),-0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi))))
-	GC = Constant (((1,0.1),(0,1)))
-	GD = Constant (((1,-0.1),(0,1)))
+	GA = array_to_const_mat(G_tl)
+	GB = array_to_const_mat(G_tr)
+	GC = array_to_const_mat(G_rt)
+	GD = array_to_const_mat(G_rb)
 	G = chi_a*GA+chi_b*GB+ chi_c*GC+ chi_d*GD
 
 
@@ -422,8 +423,8 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 
 	#         Minimization                          
 	
-	rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = 'SLSQP', tol = 1e-10, options = {'disp': True}, callback = iter_cb)
-	#rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
+	#rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = 'L-BFGS-B', tol = 1e-12, options = {'disp': True, 'ftol':1e-12, 'gtol': 1e-8}, callback = iter_cb)
+	rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
 	
 	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),edges,edges_number,W,x)
 	u_end = Function (V, name='displacement')
@@ -449,8 +450,13 @@ a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 # input parameters for the twin structure
 theta_t = 0.6
 theta_r = 0.4
-phi = 0.05*pi
-alpha = 0.1*pi
+phi = 0.1*pi
+alpha = 0.05*pi
+
+G_tl = [[cos(0.5*pi-2*phi),0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)],[sin(0.5*pi-2*phi),0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi)]]
+G_tr = [[cos(0.5*pi-2*phi),-0.1*cos(0.5*pi-2*phi)-sin(0.5*pi-2*phi)],[sin(0.5*pi-2*phi),-0.1*sin(0.5*pi-2*phi) + cos(0.5*pi-2*phi)]]
+G_rt = [[1,0.1],[0,1]]
+G_rb = [[1,-0.1],[0,1]]
 
 
 #startparameters for the shape optimization
@@ -481,6 +487,9 @@ print('\n{:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(L1, L2, a1, a2,
 print('\n  parameters for the twin structure')
 print('\n{:^7} {:^7} {:^7} {:^7}'.format('theta_t','theta_r','phi', 'alpha'))
 print('\n{:1.5f} {:1.5f} {:1.5f} {:1.5f}'.format(theta_t,theta_r,phi,alpha))
+print('\n{:^16}   {:^16}   {:^16}   {:^16}'.format('G_tl','G_tr','G_rt', 'G_rb'))
+print('\n[[{:1.3f}, {:1.3f}],    [[{:1.3f}, {:1.3f}],    [[{:1.3f}, {:1.3f}],    [[{:1.3f}, {:1.3f}],'.format(G_tl[0][0],G_tl[0][1],G_tr[0][0],G_tr[0][1],G_rt[0][0],G_tl[0][1],G_rt[0][0],G_tl[0][1]))
+print('\n [{:1.3f}, {:1.3f}]]   [{:1.3f}, {:1.3f}]]   [{:1.3f}, {:1.3f}]]   [{:1.3f}, {:1.3f}]]'.format(G_tl[1][0],G_tl[1][1],G_tr[1][0],G_tr[1][1],G_rt[1][0],G_tl[1][1],G_rt[1][0],G_tl[1][1]))
 print('\n  starting parameters for shape optimization')
 print('\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15}'.format('Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl'))
 print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
@@ -500,6 +509,9 @@ datei.write('\n    {:1.3f} {:1.3f} {:2.6f} {:2.6f} {:2.6f} {:2.6f}'.format(L1, L
 datei.write('\n\n  parameters for the twin structure')
 datei.write('\n    {:^7} {:^7} {:^7} {:^7}'.format('theta_t','theta_r','phi', 'alpha'))
 datei.write('\n    {:1.5f} {:1.5f} {:1.5f} {:1.5f}'.format(theta_t,theta_r,phi,alpha))
+datei.write('\n    {:^16}   {:^16}   {:^16}   {:^16}'.format('G_tl','G_tr','G_rt', 'G_rb'))
+datei.write('\n    [[{:1.3f}, {:1.3f}],   [[{:1.3f}, {:1.3f}],   [[{:1.3f}, {:1.3f}],   [[{:1.3f}, {:1.3f}],'.format(G_tl[0][0],G_tl[0][1],G_tr[0][0],G_tr[0][1],G_rt[0][0],G_tl[0][1],G_rt[0][0],G_tl[0][1]))
+datei.write('\n     [{:1.3f}, {:1.3f}]]    [{:1.3f}, {:1.3f}]]    [{:1.3f}, {:1.3f}]]    [{:1.3f}, {:1.3f}]]'.format(G_tl[1][0],G_tl[1][1],G_tr[1][0],G_tr[1][1],G_rt[1][0],G_tl[1][1],G_rt[1][0],G_tl[1][1]))
 datei.write('\n\n  starting parameters for shape optimization')
 datei.write('\n    {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15}'.format('Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl'))
 datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
@@ -513,23 +525,26 @@ set_working_tape(Tape())
 it = 0
 
 start = time.time()
-E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl)
+E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb)
 end = time.time()
 
 print('\n  results of shape optimization and details')
 print('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
-print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,res,verts,it))
+print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it))
 
 
 datei = open('needles/ergebnisse.txt','a')
-datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,res,verts,it))
+datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it))
 datei.close()
 
 
 # safe displacement
 file = XDMFFile ("needles/file.xdmf")
 file.parameters["functions_share_mesh"] = True
+chi_test.rename("color","label")
 file.write(chi_test, 0)
+dpsi.rename("psi","label")
 file.write(dpsi, 0)
+u.rename("u","label")
 file.write(u, 0)
 file.close()

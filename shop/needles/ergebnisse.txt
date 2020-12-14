@@ -1,7 +1,7 @@
 
 
 
- ***************    Thu Dec  3 19:21:10 2020     *************** 
+ ***************    Thu Dec  3 19:57:08 2020     *************** 
 
   parameters for computational domain and elasticity
      L1    L2      a1         a2        a3         a4    
@@ -17,3 +17,66 @@
 
   results of shape optimization and details
          E_end          Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl          time       res       verts    it 
+    3.181577794e-02 0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00         9         64       3583   0
+
+
+ ***************    Thu Dec  3 19:57:43 2020     *************** 
+
+  parameters for computational domain and elasticity
+     L1    L2      a1         a2        a3         a4    
+    2.000 2.000 11.562724 -17.437087 10.062913 -9.375448
+
+  parameters for the twin structure
+    theta_t theta_r   phi    alpha 
+    0.60000 0.40000 0.15708 0.31416
+
+  starting parameters for shape optimization
+        Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl      
+    0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 
+
+  results of shape optimization and details
+         E_end          Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl          time       res       verts    it 
+    1.418993127e-02 4.674083286e-02 -1.731237585e-01 2.000644635e+00 2.026896692e+00 -2.573486919e-01 3.447327251e-01 3.331144788e-02 9.175500507e-03 -1.348306678e-02 -1.614667185e-01 3.241467392e-01 -3.507129406e-03      1168         64       3583  61
+
+
+***************    Mon Dec 14 17:12:27 2020     *************** 
+
+  parameters for computational domain and elasticity
+     L1    L2      a1         a2        a3         a4    
+    2.000 2.000 11.562724 -17.437087 10.062913 -9.375448
+
+  parameters for the twin structure
+    theta_t theta_r   phi    alpha 
+    0.60000 0.40000 0.00000 0.00000
+          G_tl               G_tr               G_rt               G_rb      
+    [[0.000, -1.000],   [[0.000, -1.000],   [[1.000, -1.000],   [[1.000, -1.000],
+     [1.000, 0.100]]    [1.000, -0.100]]    [0.000, 0.100]]    [0.000, 0.100]]
+
+  starting parameters for shape optimization
+        Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl      
+    0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 
+
+  results of shape optimization and details
+         E_end          Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl          time       res       verts    it 
+
+
+ ***************    Mon Dec 14 17:15:50 2020     *************** 
+
+  parameters for computational domain and elasticity
+     L1    L2      a1         a2        a3         a4    
+    2.000 2.000 11.562724 -17.437087 10.062913 -9.375448
+
+  parameters for the twin structure
+    theta_t theta_r   phi    alpha 
+    0.60000 0.40000 0.31416 0.15708
+          G_tl               G_tr               G_rt               G_rb      
+    [[0.588, -0.750],   [[0.588, -0.868],   [[1.000, -0.750],   [[1.000, -0.750],
+     [0.809, 0.669]]    [0.809, 0.507]]    [0.000, 0.669]]    [0.000, 0.669]]
+
+  starting parameters for shape optimization
+        Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl      
+    0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 
+
+  results of shape optimization and details
+         E_end          Delta_t         Delta_r           Lt              Lr              pt              pr              c1              c2              c3              c4              tlb             tbl          time       res       verts    it 
+    2.110045104e-02 0.000000000e+00 0.000000000e+00 2.000000000e+00 2.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00 0.000000000e+00        34         64       3583   0
