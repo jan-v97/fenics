@@ -1,0 +1,33 @@
+
+ taylor_testing:  0 
+2.0517066394707117
+ taylor_testing:  1 
+1.9988364865560873
+ taylor_testing:  2 
+1.9994903105069672
+ taylor_testing:  3 
+1.9991791259156795
+ taylor_testing:  4 
+1.9996159042308639
+ taylor_testing:  5 
+1.9998253006090272
+ taylor_testing:  6 
+2.000359102398016
+ taylor_testing:  7 
+-1.2932228286338214
+ taylor_testing:  8 
+2.00003640255931
+ taylor_testing:  9 
+1.9999891290335372
+ taylor_testing: 10 
+2.0001179143227317
+ taylor_testing: 11 
+1.9988898553565486
+ taylor_testing: 12 
+1.9998196177738603
+ taylor_testing:  7 
+-1.2932228286338214
+ taylor_testing:  7 
+-1.2932721527969917
+ taylor_testing:  7 
+-1.2932346814135594
