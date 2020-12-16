@@ -410,11 +410,11 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 	#def derivative_cb(j, dj, m):
 	#	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
 	controls = [Control(Delta_t),Control(Delta_r),Control(Lt),Control(Lr),Control(pt),Control(pr),Control(tc1),Control(tc2),Control(tc3),Control(tc4),Control(tlb),Control(tbl)]
+	h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(10.),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
 	test = [Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl]
 
 	if (taylor_testing == 0):
 		Ehat = ReducedFunctional(assemble(E), controls)
-		h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
 		conv_rateL = taylor_test(Ehat, test, h)
 		datei = open('needles/taylor.txt','a')
 		datei.write('\n taylor_testing: {:2d} \n'.format(taylor_testing))
@@ -424,8 +424,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 
 	elif (1<=taylor_testing<=12):
 		Ehat = ReducedFunctional(assemble(E), [controls[taylor_testing-1]])
-		h = Constant(0.1)
-		conv_rateL = taylor_test(Ehat, [test[taylor_testing-1]], h)
+		conv_rateL = taylor_test(Ehat, [test[taylor_testing-1]], h[taylor_testing-1])
 		datei = open('needles/taylor.txt','a')
 		datei.write('\n taylor_testing: {:2d} \n'.format(taylor_testing))
 		datei.write(str(conv_rateL))
@@ -506,7 +505,7 @@ def print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3
 # input parameters for computational domain
 L1 = 2.
 L2 = 2.
-resolution = 2**6
+resolution = 2**7
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
@@ -550,8 +549,8 @@ print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a
 
 set_working_tape(Tape())
 it = 0
-for i in range(7,8):
-	taylor_testing = i
+for i in range(0,1):
+	taylor_testing = -1
 	start = time.time()
 	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing)
 	end = time.time()

@@ -31,3 +31,17 @@
 -1.2932721527969917
  taylor_testing:  7 
 -1.2932346814135594
+ taylor_testing:  7 
+-1.2932346814135594
+ taylor_testing:  7 
+0.9736478464570221
+ taylor_testing:  7 
+0.9977904470890536
+ taylor_testing:  7 
+2.0412570234343037
+ taylor_testing:  7 
+1.9847840690539578
+ taylor_testing:  0 
+1.9820090849742642
+ taylor_testing:  0 
+1.9837128890511233
