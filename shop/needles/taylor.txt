@@ -1,6 +1,6 @@
 
  taylor_testing:  0 
-2.0517066394707117
+1.9837128890511233
  taylor_testing:  1 
 1.9988364865560873
  taylor_testing:  2 
@@ -14,7 +14,7 @@
  taylor_testing:  6 
 2.000359102398016
  taylor_testing:  7 
--1.2932228286338214
+1.9847840690539578
  taylor_testing:  8 
 2.00003640255931
  taylor_testing:  9 
@@ -25,23 +25,39 @@
 1.9988898553565486
  taylor_testing: 12 
 1.9998196177738603
- taylor_testing:  7 
--1.2932228286338214
- taylor_testing:  7 
--1.2932721527969917
- taylor_testing:  7 
--1.2932346814135594
- taylor_testing:  7 
--1.2932346814135594
- taylor_testing:  7 
-0.9736478464570221
- taylor_testing:  7 
-0.9977904470890536
- taylor_testing:  7 
-2.0412570234343037
- taylor_testing:  7 
-1.9847840690539578
  taylor_testing:  0 
-1.9820090849742642
+1.993827928518838
+ taylor_testing:  1 
+1.998623780768512
+ taylor_testing:  2 
+1.999436400236022
+ taylor_testing:  1 
+1.9989167182053165
  taylor_testing:  0 
-1.9837128890511233
+2.1055701394210518
+ taylor_testing:  1 
+1.998707767086633
+ taylor_testing:  2 
+2.0000277235140325
+ taylor_testing:  3 
+1.9988367788347967
+ taylor_testing:  4 
+1.9995900010854555
+ taylor_testing:  5 
+1.988789001238183
+ taylor_testing:  6 
+1.9996615795787425
+ taylor_testing:  7 
+2.000863576520599
+ taylor_testing:  8 
+2.000155852804953
+ taylor_testing:  9 
+2.0000173295682626
+ taylor_testing: 10 
+2.0000033964520134
+ taylor_testing: 11 
+1.9999801269171007
+ taylor_testing: 12 
+1.9946138675570988
+ taylor_testing:  0 
+1.9983179706369045

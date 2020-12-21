@@ -129,6 +129,12 @@ def array_to_const_mat(G):
 	return Constant(((G[0][0],G[0][1]),(G[1][0],G[1][1])))
 
 
+def m_to_array(m):
+	array = []
+	for entry in m:
+		array.append(float(entry))
+	return array
+
 	
 #                                                setting up the mesh                                         
 def get_mesh(L1,L2,theta_t,theta_r,resolution):
@@ -228,6 +234,13 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 	point_e_y = 0.25+pt + Lt * x1_y - (theta_t*C-(B+delta_t)) * x2_y
 	point_f_x = 0.75+pr + Lt * x1_x + (B+delta_t) * x2_x
 	point_f_y = 0.25+pt + Lt * x1_y + (B+delta_t) * x2_y
+	point_g_y = 0.25+pt + delta_r - theta_r * sin(phi)*sqrt(2)
+	point_h_x = Lr+L2+theta_r*cos(phi)*sqrt(2)
+	point_h_y = 0.25+pt + delta_r
+	point_i_x = Lr+L2+cos(phi)*sqrt(2)
+	point_i_y = 0.25+pt + delta_r+(1-theta_r)*sin(phi)*sqrt(2)
+	point_j_x = Lr+cos(phi)*sqrt(2)
+	point_j_y = 0.25+pt + delta_r+(1-theta_r)*sin(phi)*sqrt(2)
 
 	edges[0].deformation = project(as_vector((((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_x  -  point_a_x)  +  point_a_x ,((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_y  -  point_a_y)  +  point_a_y)),W)
 	def boundary_lt(x, on_boundary):
@@ -265,7 +278,7 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 	def boundary_c3(x, on_boundary):
 		return on_polygon(x,edges[8], closed='o')
 
-	edges[9].deformation = project(as_vector((((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr,tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.5*sin(phi)*sqrt(2)*theta_r+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt)),W)
+	edges[9].deformation = project(as_vector((((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr,tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.25+pt+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt)),W)
 	def boundary_c2(x, on_boundary):
 		return on_polygon(x,edges[9], closed='o')
 
@@ -273,31 +286,31 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 	def boundary_c1(x, on_boundary):
 		return on_polygon(x,edges[10], closed='c')
 
-	edges[11].deformation = project(as_vector(((x[0]/L1)*(Lr),tbl*(x[0]/L1)*(x[0]/L1)  +  (-0.5*sin(phi)*sqrt(2)*theta_r+delta_r  -  tbl)*(x[0]/L1))),W)
+	edges[11].deformation = project(as_vector(((x[0]/L1)*(Lr),tbl*(x[0]/L1)*(x[0]/L1)  +  (point_g_y  -  tbl)*(x[0]/L1))),W)
 	def boundary_bl(x, on_boundary):
-		return on_polygon(x,edges[11], closed='h')
+		return on_polygon(x,edges[11], closed='o')
 
-	edges[12].deformation = project(as_vector((x[0]+(Lr-L1),-0.5*sin(phi)*sqrt(2)*theta_r+delta_r)),W)
+	edges[12].deformation = project(as_vector((x[0]+(Lr-L1),point_g_y)),W)
 	def boundary_br(x, on_boundary):
-		return on_polygon(x,edges[12], closed='o')
+		return on_polygon(x,edges[12], closed='h')
 
-	edges[13].deformation = project(as_vector((((x[0]-L1)/(L2+0.5))  *  (L2+theta_r*(cos(phi)*sqrt(2)))  +  Lr,0.5*sin(phi)*sqrt(2)*theta_r+delta_r)),W)
+	edges[13].deformation = project(as_vector((((x[0]-L1)/(L2+0.5))  *  (L2+theta_r*(cos(phi)*sqrt(2)))  +  Lr,point_h_y)),W)
 	def boundary_mr(x, on_boundary):
-		return on_polygon(x,edges[13], closed='h')
+		return on_polygon(x,edges[13], closed='c')
 
-	edges[14].deformation = project(as_vector((((x[1]+0.25)/(0.5))  *  theta_r*(cos(phi)*sqrt(2)) + Lr+L2,((x[1]+0.25)/(0.5))  *  (0.5*sin(phi)*sqrt(2)*theta_r+delta_r  - (-0.5*sin(phi)*sqrt(2)*theta_r+delta_r))  - 0.5*sin(phi)*sqrt(2)*theta_r+delta_r)),W)
+	edges[14].deformation = project(as_vector((((x[1]+0.25)/(0.5))  *   theta_r*cos(phi)*sqrt(2)+ Lr+L2,((x[1]+0.25)/(0.5))  *  (point_h_y  - point_g_y)  + point_g_y)),W)
 	def boundary_rb(x, on_boundary):
-		return on_polygon(x,edges[14], closed='o')
+		return on_polygon(x,edges[14], closed='h')
 
-	edges[15].deformation = project(as_vector((((x[1]-0.25)/(0.5))  * (1-theta_r)*(cos(phi)*sqrt(2))  +  Lr+L2+theta_r*(cos(phi)*sqrt(2)),((x[1]-0.25)/(0.5))  *  ((1-theta_r)*sin(phi)*sqrt(2))  + 0.5*sin(phi)*sqrt(2)*theta_r+delta_r)),W)
+	edges[15].deformation = project(as_vector((((x[1]-0.25)/(0.5))  * (1-theta_r)*(cos(phi)*sqrt(2))  +  Lr+L2+theta_r*(cos(phi)*sqrt(2)),((x[1]-0.25)/(0.5))  *  (point_i_y - point_h_y) + point_h_y)),W)
 	def boundary_rt(x, on_boundary):
 		return on_polygon(x,edges[15], closed='o')
 
-	edges[16].deformation = project(as_vector((((x[0]-(L1+1.))/(L2))  *  L2  +  Lr+cos(phi)*sqrt(2),(1-0.5*theta_r)*sin(phi)*sqrt(2)+delta_r)),W)
+	edges[16].deformation = project(as_vector((((x[0]-(L1+1.))/(L2))  *  L2  +  Lr+cos(phi)*sqrt(2),point_j_y)),W)
 	def boundary_br2(x, on_boundary):
 		return on_polygon(x,edges[16], closed='c')
 
-	edges[17].deformation = project(as_vector((((x[0]-1.)/L1)*(Lr)+cos(phi)*sqrt(2),tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  ((1-0.5*theta_r)*sin(phi)*sqrt(2)+delta_r  -  (sin(phi)*sqrt(2))  -  tbl)*((x[0]-1.)/L1)  +  sin(phi)*sqrt(2))),W)
+	edges[17].deformation = project(as_vector((((x[0]-1.)/L1)*(Lr)+cos(phi)*sqrt(2),tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  (point_j_y  -  (sin(phi)*sqrt(2))  -  tbl)*((x[0]-1.)/L1)  +  sin(phi)*sqrt(2))),W)
 	def boundary_bl2(x, on_boundary):
 		return on_polygon(x,edges[17], closed='o')
 
@@ -327,7 +340,7 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 
 
 #                                                 the programm                                        
-def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing):
+def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter):
 
 	mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d, chi_test, verts = get_mesh(L1,L2,theta_t,theta_r,resolution)
 	x = SpatialCoordinate(mesh)
@@ -337,14 +350,16 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 		def inside (self, x, on_boundary): 
 			return bool ( (on_polygon(x,edges[0]) and on_boundary) or	(on_polygon(x,edges[1]) and on_boundary)  or (on_polygon(x,edges[11]) and on_boundary) or	(on_polygon(x,edges[12]) and on_boundary) )
 		# Map top_right boundary to bottom_left boundary
-		def map (self, x, y): y[0] = x[0]-cos(phi)*sqrt(2); y[1] = x[1]-sin(phi)*sqrt(2)
+		def map (self, x, y):
+			y[0] = x[0]-1.
+			y[1] = x[1]-1.
 
 	# create the function spaces
 	U = FunctionSpace (mesh, "CG", 1)
 	V = VectorFunctionSpace (mesh, "CG", 1, constrained_domain=PeriodicBoundary())
 	W = VectorFunctionSpace(mesh, 'CG', 1)
 
-	u = Function (V, name='displacement')
+	u = Function (V)
 	v = TestFunction(V)
 
 
@@ -396,25 +411,32 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 	F = derivative (E, u, v)
 	print ("******* compute the elastic deformation:")
 	solve (F == 0, u, bcsopt)
-	startE = assemble(E)
-	print ("********** E_start = %f" % startE, flush=True)
+	#startE = assemble(E)
+	#print ("********** E_start = %f" % startE, flush=True)
+	u = project (u,V)
+	Energy = assemble(E)
 
 	def iter_cb(m):
-		global it
-		it = it + 1
+		#global it
+		#it = it + 1
 		print ("m = ", m)
 
-	#def eval_cb(j, m):
-	#	print ("j = %f, m = %f." % (j, float(m)))
-	
-	#def derivative_cb(j, dj, m):
-	#	print ("j = %f, dj = %f, m = %f." % (j, dj, float(m)))
+	def derivative_cb(j, dj, m):
+		vec_m = m_to_array(m)
+		global it
+		global string_time
+		print ("dj_cb, it: ",it, " m: ",vec_m)
+		if (it%1==0):
+			print_and_write_sol(True,True,j,vec_m[0],vec_m[1],vec_m[2],vec_m[3],vec_m[4],vec_m[5],vec_m[6],vec_m[7],vec_m[8],vec_m[9],vec_m[10],vec_m[11],0,0,0,it,string_time,0)
+		it = it + 1
+
+
 	controls = [Control(Delta_t),Control(Delta_r),Control(Lt),Control(Lr),Control(pt),Control(pr),Control(tc1),Control(tc2),Control(tc3),Control(tc4),Control(tlb),Control(tbl)]
-	h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(10.),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
+	h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
 	test = [Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl]
 
 	if (taylor_testing == 0):
-		Ehat = ReducedFunctional(assemble(E), controls)
+		Ehat = ReducedFunctional(Energy, controls)
 		conv_rateL = taylor_test(Ehat, test, h)
 		datei = open('needles/taylor.txt','a')
 		datei.write('\n taylor_testing: {:2d} \n'.format(taylor_testing))
@@ -423,7 +445,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
 
 	elif (1<=taylor_testing<=12):
-		Ehat = ReducedFunctional(assemble(E), [controls[taylor_testing-1]])
+		Ehat = ReducedFunctional(Energy, [controls[taylor_testing-1]])
 		conv_rateL = taylor_test(Ehat, [test[taylor_testing-1]], h[taylor_testing-1])
 		datei = open('needles/taylor.txt','a')
 		datei.write('\n taylor_testing: {:2d} \n'.format(taylor_testing))
@@ -431,28 +453,24 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 		
 		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
 
+	elif (taylor_testing==13):
+		
+		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
+		return Energy,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl), chi_test,dpsi,u,verts
+
 	else:
-		Ehat = ReducedFunctional(assemble(E), controls)
-		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = 'L-BFGS-B', tol = 1e-12, options = {'disp': True, 'ftol':1e-12, 'gtol': 1e-8}, callback = iter_cb)
+		Ehat = ReducedFunctional(assemble(E), controls,derivative_cb_post = derivative_cb)
+		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = method, tol = 1e-12, options = {'disp': True, 'ftol':ftol, 'gtol': gtol,'maxiter':maxiter}, callback = iter_cb)
 
-	
-	
-	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),edges,edges_number,W,x)
-	u_end = Function (V, name='displacement')
-	energy2 = energy_density (u_end, psi, G, a1, a2, a3, a4)*dx
-	F2 = derivative (energy2, u_end, v)
-	solve (F2 == 0, u_end, bcsopt)
-	E_end = assemble(energy_density (u_end, psi, G, a1, a2, a3, a4)*dx)
-
-	return E_end,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl), chi_test,dpsi,u,verts
+	return Energy,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl), chi_test,dpsi,u,verts
 
 #                     print and write                            
 
-def print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb):
+def print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,string_time):
 
 	if prin:
-		print("\n\n\n ***************    ")
-		print(time.ctime())
+		print("***************    ")
+		print(time.time())
 		print("     *************** ")
 		print('\n  parameters for computational domain and elasticity')
 		print('\n{:^5} {:^5} {:^9} {:^10} {:^9} {:^10}'.format('L1','L2','a1', 'a2', 'a3', 'a4'))
@@ -468,8 +486,8 @@ def print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,
 		print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
 
 	if write:
-		datei = open('needles/ergebnisse.txt','a')
-		datei.write("\n\n\n ***************    ")
+		datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+		datei.write("***************    ")
 		datei.write(time.ctime())
 		datei.write("     *************** ")
 		datei.write('\n\n  parameters for computational domain and elasticity')
@@ -485,41 +503,54 @@ def print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,
 		datei.write('\n    {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15}'.format('Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl'))
 		datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
 		datei.write('\n\n  results of shape optimization and details')
-		datei.write('\n    {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
+		datei.write('\n        {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
 		datei.close()
 
 
-def print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it):
+def print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it,string_time,i):
 	if prin:
-		print('\n  results of shape optimization and details')
-		print('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
-		print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it))
+		if not (verts==0):
+			print('\n  results of shape optimization and details')
+			print('\n\n{:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^15} {:^10} {:^10} {:^10} {:^3}'.format('E_end', 'Delta_t','Delta_r','Lt', 'Lr', 'pt', 'pr','c1','c2','c3', 'c4', 'tlb', 'tbl', 'time', 'res', 'verts', 'it'))
+			print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it))
 
 	if write:
-		datei = open('needles/ergebnisse.txt','a')
-		datei.write('\n    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it))
+		if not (verts==0):
+			datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+			datei.write('\n {:3d}    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(i,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it))
+		else:
+			datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+			datei.write('\n    {:3d} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e}'.format(it,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl))
 		datei.close()
 
 #                                               input parameters, edges, bc, domains                                          
 
 # input parameters for computational domain
-L1 = 2.
-L2 = 2.
-resolution = 2**7
+L1 = 7.
+L2 = 7.
+resolution = 2**5
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 
-# input parameters for the twin structure
-theta_t = 0.6
-theta_r = 0.4
-phi = 0.15*pi
-alpha = 0.5*pi
+# parameters for Optimization
+ftol = 1e-8
+gtol = 1e-6
+method = 'L-BFGS-B'
+maxiter = 0
 
-G_tl = [[1,0],[0,1]]
-G_tr = [[1,0],[0,1]]
-G_rt = [[1,0.1],[0,1]]
-G_rb = [[1,-0.1],[0,1]]
+# input parameters for the twin structure
+theta_t = 0.5
+theta_r = 0.5
+phi = 0.25*pi
+alpha = 0.5*pi
+delta = 0.1
+
+
+G_tl = [[1 + delta*cos(alpha)*sin(alpha) ,-delta*cos(alpha)*cos(alpha)],[delta*sin(alpha)*sin(alpha),1-delta*cos(alpha)*sin(alpha)]]
+G_tr = [[1-delta*cos(alpha)*sin(alpha) ,delta*cos(alpha)*cos(alpha)],[-delta*sin(alpha)*sin(alpha),1+delta*cos(alpha)*sin(alpha)]]
+G_rt = [[1,-delta],[0,1]]
+G_rb = [[1,delta],[0,1]]
 
 
 #startparameters for the shape optimization
@@ -541,30 +572,55 @@ stlb = 0.
 stbl = 0.
 
 prin = True
-write = False
+write = True
 
-print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb)
+#sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = 2.393875371e-03, 2.697566465e-01, 6.991500095e+00, 6.987496831e+00, -1.953953583e-01, -2.440535251e-01, 1.309566403e-01, 1.135755339e-01, -1.567828415e-02, 5.321187074e-03, -1.373281913e-02, 1.213123984e-01
 
+string_time = time.strftime("%d_%b_%H_%M", time.gmtime())
 
+print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,string_time)
 
-set_working_tape(Tape())
-it = 0
-for i in range(0,1):
-	taylor_testing = -1
+file = XDMFFile ("needles/file.xdmf")
+file.parameters ["flush_output"] = True
+file.parameters["functions_share_mesh"] = True
+file.parameters ["rewrite_function_mesh"] = False
+
+maxi = 1
+delta_E = 1.
+E_alt=100
+i = 0
+while ((i<maxi)&(delta_E>1e-7)):
+	it = 0
+	taylor_testing = 13
+	set_working_tape(Tape())
+	# 0 for taylor test in all controls
+	# 1-12 for taylor test in control 1-12
+	# 13 just computing deformation
+	# else shape opt
 	start = time.time()
-	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing)
+	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter)
 	end = time.time()
 
-	print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it)
+	# computing the deformation at the ende
+	#if not (0 <= taylor_testing <= 14):
+	#	set_working_tape(Tape())
+	#	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,G_tl,G_tr,G_rt,G_rb,13,ftol,gtol,method,maxiter)
+	
 
+	print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it,string_time,i)
+	print("E_end:",E_end)
 
-# safe displacement
-file = XDMFFile ("needles/file.xdmf")
-file.parameters["functions_share_mesh"] = True
-chi_test.rename("color","label")
-file.write(chi_test, 0)
-dpsi.rename("psi","label")
-file.write(dpsi, 0)
-u.rename("u","label")
-file.write(u, 0)
-file.close()
+	sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
+
+	# safe displacement
+	chi_test.rename("color","label")
+	file.write(chi_test, i)
+	dpsi.rename("psi","label")
+	file.write(dpsi, i)
+	u.rename("u","label")
+	file.write(u, i)
+	file.close()
+
+	delta_E = abs(E_alt - E_end)
+	E_alt = E_end
+	i = i+1
