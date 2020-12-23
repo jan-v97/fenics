@@ -82,14 +82,14 @@ class subdomaininput:
 #    closed = 'h'          --> first endpoint include, second not
 #    closed = 'o'          --> no endpoint is included
 def on_polygon(x,edge,closed='c'):
-	for i in range(0,edge.pointnumber-1):
+	for i in range(0,1):
 		x0 = ((edge.data)[i]).x()
 		y0 = ((edge.data)[i]).y()
-		x1 = ((edge.data)[i+1]).x()
-		y1 = ((edge.data)[i+1]).y()
+		x1 = ((edge.data)[edge.pointnumber-1]).x()
+		y1 = ((edge.data)[edge.pointnumber-1]).y()
 		# x near (x0,y0)
 		if (near(x[0],x0,tol) and near(x[1],y0,tol)):
-			if (closed=='c'):
+			if ((closed=='c')):
 				return True
 			elif (closed =='h'):
 				return True
@@ -97,13 +97,13 @@ def on_polygon(x,edge,closed='c'):
 				return False
 		# x near(x1,y1)
 		elif (near(x[0],x1,tol) and near(x[1],y1,tol)):
-			if (closed=='c'):
+			if ((closed=='c')):
 				return True
 			elif (closed =='h'):
 				return False
 			else: 
 				return False
-		elif near(x1,x0,tol):
+		elif (abs(x1-x0)<abs(y1-y0)):
 			r = (x1 - x0) * (x[1] - y0) / (y1 - y0) + x0 - x[0] 
 			if (near(r, 0.0, tol) and (((x[1] >= y0) and (x[1] <= y1)) or ((x[1] >= y1) and (x[1] <=y0)))):
 				return True
@@ -135,42 +135,79 @@ def m_to_array(m):
 		array.append(float(entry))
 	return array
 
+def get_points(L1,L2,resolution):
+	L = L1+L2
+	h = 0.1
+	num_points_1 = int(L1/h)
+	num_points_2 = int(L2/h)
+	num_points_3 = int((L1-0.75)/h)
+	lt_points,lb_points,bl_points,br_points,lt2_points,lb2_points,bl2_points,br2_points = [],[],[],[],[],[],[],[]
+	for i in range(0,num_points_2):
+		lt_points.append(dolfin.Point(0.,L1+L2-0.25-i*h))
+		lt2_points.append(dolfin.Point(1.,1.+L1+L2-0.25-i*h))
+		br_points.append(dolfin.Point(L1+i*h,0.))
+		br2_points.append(dolfin.Point(1.+L1+i*h,1.))
+	lt_points.append(dolfin.Point(0.,L1-0.75))
+	lt2_points.append(dolfin.Point(1.,1.+L1-0.75))
+	br_points.append(dolfin.Point(L1+L2,0.))
+	br2_points.append(dolfin.Point(1.+L1+L2,1.))
+	for i in range(0,num_points_1):
+		bl_points.append(dolfin.Point(i*h,0.))
+		bl2_points.append(dolfin.Point(1.+i*h,1.))
+	bl_points.append(dolfin.Point(L1,0.))
+	bl2_points.append(dolfin.Point(1.+L1,1.))
+	for i in range(0,num_points_3):
+		lb_points.append(dolfin.Point(0.,L1-0.75-i*h))
+		lb2_points.append(dolfin.Point(1.,1.+L1-0.75-i*h))
+	lb_points.append(dolfin.Point(0.,0.))
+	lb2_points.append(dolfin.Point(1.,1.))
+	return lt_points,lb_points,bl_points,br_points,lt2_points,lb2_points,bl2_points,br2_points
 	
 #                                                setting up the mesh                                         
 def get_mesh(L1,L2,theta_t,theta_r,resolution):
 
 	# input edges
-	lt = edgeinput([dolfin.Point(0., -0.25+L1+L2),dolfin.Point(0., -0.75+L1)])
-	lb = edgeinput([dolfin.Point(0., -0.75+L1),dolfin.Point(0., 0.)])
+	lt_points,lb_points,bl_points,br_points,lt2_points,lb2_points,bl2_points,br2_points = get_points(L1,L2,resolution)
+	lt = edgeinput(lt_points)
+	lb = edgeinput(lb_points)
 	tl = edgeinput([dolfin.Point(0.5, 0.25+L1+L2),dolfin.Point(0., -0.25+L1+L2)])
 	tr = edgeinput([dolfin.Point(1., 0.75+L1+L2),dolfin.Point(0.5, 0.25+L1+L2)])
 	mt = edgeinput([dolfin.Point(0.5, 0.25+L1),dolfin.Point(0.5, 0.25+L1+L2)])
-	lt2 = edgeinput([dolfin.Point(1., 0.25+L1),dolfin.Point(1., 0.75+L1+L2)])
-	lb2 = edgeinput([dolfin.Point(1., 1.),dolfin.Point(1., 0.25+L1)])
+	lt2 = edgeinput(lt2_points)
+	lb2 = edgeinput(lb2_points)
 	c4 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(0.5, 0.25+L1)])
 	c3 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(1., 1.)])
-	c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, 0.25)])
+	c2 = edgeinput([dolfin.Point(0.75, 0.25),dolfin.Point(L1, 0.5)])
 	c1 = edgeinput([dolfin.Point(0., 0.),dolfin.Point(0.75, 0.25)])
-	bl = edgeinput([dolfin.Point(0., 0.),dolfin.Point(L1, -0.25)])
-	br = edgeinput([dolfin.Point(L1, -0.25),dolfin.Point(L1+L2, -0.25)])
-	mr = edgeinput([dolfin.Point(L1, 0.25),dolfin.Point(L1+L2+0.5, 0.25)])
-	rb = edgeinput([dolfin.Point(L1+L2, -0.25),dolfin.Point(L1+L2+0.5, 0.25)])
-	rt = edgeinput([dolfin.Point(L1+L2+0.5, 0.25),dolfin.Point(L1+L2+1., 0.75)])
-	br2 = edgeinput([dolfin.Point(L1+L2+1., 0.75),dolfin.Point(1.+L1, 0.75)])
-	bl2 = edgeinput([dolfin.Point(1+L1, 0.75),dolfin.Point(1., 1.)])
+	bl = edgeinput(bl_points)
+	br = edgeinput(br_points)
+	mr = edgeinput([dolfin.Point(L1, 0.5),dolfin.Point(L1+L2+0.5, 0.5)])
+	rb = edgeinput([dolfin.Point(L1+L2, 0.),dolfin.Point(L1+L2+0.5, 0.5)])
+	rt = edgeinput([dolfin.Point(L1+L2+0.5, 0.5),dolfin.Point(L1+L2+1., 1.)])
+	br2 = edgeinput(br2_points)
+	bl2 = edgeinput(bl2_points)
 
 	# define a vector with the edges
 	edges = [lt,lb,tl,tr,mt,lt2,lb2,c4,c3,c2,c1,bl,br,mr,rb,rt,br2,bl2]
 	edges_number = len(edges)
 
 	# define the complete domain
-	domain_complete = subdomaininput([lt,lb,bl,br,rb,rt,br2,bl2,lb2,lt2,tr,tl],[0,0,0,0,0,0,0,0,0,0,0,0],0)
+	domain_complete = subdomaininput([lt,lb,bl,br,rb,rt,br2,bl2,lb2,lt2,tr,tl],[0,0,0,0,0,0,1,1,1,1,0,0],0)
 
 	# input subdomains
 	domain_left = subdomaininput([lt,lb,c1,c4,mt,tl],[0,0,0,0,0,0],0)
-	domain_top = subdomaininput([c3,lb2,lt2,tr,mt,c4],[0,0,0,0,1,1],0)
-	domain_right = subdomaininput([c2,mr,rt,br2,bl2,c3],[0,0,0,0,0,1],0)
+	domain_top = subdomaininput([c3,lb2,lt2,tr,mt,c4],[0,1,1,0,1,1],0)
+	domain_right = subdomaininput([c2,mr,rt,br2,bl2,c3],[0,0,0,1,1,1],0)
 	domain_bottom = subdomaininput([bl,br,rb,mr,c2,c1],[0,0,0,1,1,1],0)
+	#domain_left.printpolygon()
+	#print("\n")
+	#domain_top.printpolygon()
+	#print("\n")
+	#domain_right.printpolygon()
+	#print("\n")
+	#domain_bottom.printpolygon()
+	#print("\n")
+	#lb2.print()
 
 	# define a vector with the subdomains
 	subdomains = [domain_left,domain_top,domain_right,domain_bottom]
@@ -209,7 +246,7 @@ def get_mesh(L1,L2,theta_t,theta_r,resolution):
 
 
 #                                                 calculating the deformation                                
-def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x):
+def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,V,x):
 	# components of basis vectors
 	x1_x = cos(alpha)
 	x1_y = sin(alpha)
@@ -242,75 +279,75 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 	point_j_x = Lr+cos(phi)*sqrt(2)
 	point_j_y = 0.25+pt + delta_r+(1-theta_r)*sin(phi)*sqrt(2)
 
-	edges[0].deformation = project(as_vector((((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_x  -  point_a_x)  +  point_a_x ,((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_y  -  point_a_y)  +  point_a_y)),W)
+	edges[0].deformation = project(as_vector((((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_x  -  point_a_x)  +  point_a_x ,((x[1]-(-0.25+L1+L2))/(-(L2+0.5)))  *   (  point_b_y  -  point_a_y)  +  point_a_y)),V)
 	def boundary_lt(x, on_boundary):
 		return on_polygon(x,edges[0], closed='c')
 
-	edges[1].deformation = project(as_vector((tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))  +  (point_b_x-tlb)  *  ((x[1])/(L1-0.75)) , ((x[1])/(L1-0.75))*point_b_y)),W)
+	edges[1].deformation = project(as_vector((tlb*((x[1])/(L1-0.75))*((x[1])/(L1-0.75))  +  (point_b_x-tlb)  *  ((x[1])/(L1-0.75)) , ((x[1])/(L1-0.75))*point_b_y)),V)
 	def boundary_lb(x, on_boundary):
 		return on_polygon(x,edges[1], closed='o')
 
-	edges[2].deformation = project(as_vector(((x[0]/0.5)  *  (  point_c_x  -  point_a_x  )  +  point_a_x , (x[0]/0.5)  *  (  point_c_y  -  point_a_y  )  +  point_a_y)),W)
+	edges[2].deformation = project(as_vector(((x[0]/0.5)  *  (  point_c_x  -  point_a_x  )  +  point_a_x , (x[0]/0.5)  *  (  point_c_y  -  point_a_y  )  +  point_a_y)),V)
 	def boundary_tl(x, on_boundary):
 		return on_polygon(x,edges[2], closed='o')
 
-	edges[3].deformation = project(as_vector((((x[0]-0.5)/0.5)  *  (  point_d_x  -  point_c_x  )  +  point_c_x,((x[0]-0.5)/0.5)  *  (  point_d_y  -  point_c_y  )  +  point_c_y)),W)
+	edges[3].deformation = project(as_vector((((x[0]-0.5)/0.5)  *  (  point_d_x  -  point_c_x  )  +  point_c_x,((x[0]-0.5)/0.5)  *  (  point_d_y  -  point_c_y  )  +  point_c_y)),V)
 	def boundary_tr(x, on_boundary):
 		return on_polygon(x,edges[3], closed='h')
 
-	edges[4].deformation = project(as_vector((((x[1]-(0.25+L1+L2))/(-L2))  *   (  point_e_x  -  point_c_x)  +  point_c_x,((x[1]-(0.25+L1+L2))/(-L2))  *   (  point_e_y  -  point_c_y)  +  point_c_y)),W)
+	edges[4].deformation = project(as_vector((((x[1]-(0.25+L1+L2))/(-L2))  *   (  point_e_x  -  point_c_x)  +  point_c_x,((x[1]-(0.25+L1+L2))/(-L2))  *   (  point_e_y  -  point_c_y)  +  point_c_y)),V)
 	def boundary_mt(x, on_boundary):
 		return on_polygon(x,edges[4], closed='c')
 
-	edges[5].deformation = project(as_vector((((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  point_f_x  -  point_d_x)  +  point_d_x,((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  point_f_y  -  point_d_y)  +  point_d_y)),W)
+	edges[5].deformation = project(as_vector((((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  point_f_x  -  point_d_x)  +  point_d_x,((x[1]-(0.75+L1+L2))/(-(L2+0.5)))  *   (  point_f_y  -  point_d_y)  +  point_d_y)),V)
 	def boundary_lt2(x, on_boundary):
 		return on_polygon(x,edges[5], closed='o')
 
-	edges[6].deformation = project(as_vector((tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))   +   (point_f_x  -  cos(phi)*sqrt(2)  -  tlb)*((x[1]-1.)/(L1-0.75))  +  cos(phi)*sqrt(2) , ((x[1]-1.)/(L1-0.75))  *  (point_f_y  -  sin(phi)*sqrt(2))  +  sin(phi)*sqrt(2))),W)
+	edges[6].deformation = project(as_vector((tlb*((x[1]-1.)/(L1-0.75))*((x[1]-1.)/(L1-0.75))   +   (point_f_x  -  cos(phi)*sqrt(2)  -  tlb)*((x[1]-1.)/(L1-0.75))  +  cos(phi)*sqrt(2) , ((x[1]-1.)/(L1-0.75))  *  (point_f_y  -  sin(phi)*sqrt(2))  +  sin(phi)*sqrt(2))),V)
 	def boundary_lb2(x, on_boundary):
 		return on_polygon(x,edges[6], closed='c')
 
-	edges[7].deformation = project(as_vector((tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))  +  (point_e_x  -  (0.75+pr)  -  tc4)*((x[1]-0.25)/(L1))  +  0.75+pr , ((x[1]-0.25)/(L1))  *  (  point_e_y  -  (0.25+pt)  )  +  0.25+pt)),W)
+	edges[7].deformation = project(as_vector((tc4*((x[1]-0.25)/(L1))*((x[1]-0.25)/(L1))  +  (point_e_x  -  (0.75+pr)  -  tc4)*((x[1]-0.25)/(L1))  +  0.75+pr , ((x[1]-0.25)/(L1))  *  (  point_e_y  -  (0.25+pt)  )  +  0.25+pt)),V)
 	def boundary_c4(x, on_boundary):
 		return on_polygon(x,edges[7], closed='o')
 
-	edges[8].deformation = project(as_vector((tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)  +  (cos(phi)*sqrt(2)  -  (0.75+pr)  -  tc3)*((x[1]-0.25)/0.75)  +  0.75+pr,((x[1]-0.25)/0.75)  *  (  sin(phi)*sqrt(2)  -  (0.25+pt)  )  +  0.25+pt)),W)
+	edges[8].deformation = project(as_vector((tc3*((x[1]-0.25)/0.75)*((x[1]-0.25)/0.75)  +  (cos(phi)*sqrt(2)  -  (0.75+pr)  -  tc3)*((x[1]-0.25)/0.75)  +  0.75+pr,((x[1]-0.25)/0.75)  *  (  sin(phi)*sqrt(2)  -  (0.25+pt)  )  +  0.25+pt)),V)
 	def boundary_c3(x, on_boundary):
 		return on_polygon(x,edges[8], closed='o')
 
-	edges[9].deformation = project(as_vector((((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr,tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.25+pt+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt)),W)
+	edges[9].deformation = project(as_vector((((x[0]-0.75)/(L1-0.75))  *  (  Lr  -  (0.75+pr)  )  +  0.75+pr,tc2*((x[0]-0.75)/(L1-0.75))*((x[0]-0.75)/(L1-0.75))  +  (0.25+pt+delta_r - (0.25+pt) - tc2)*((x[0]-0.75)/(L1-0.75))  +  0.25+pt)),V)
 	def boundary_c2(x, on_boundary):
 		return on_polygon(x,edges[9], closed='o')
 
-	edges[10].deformation = project(as_vector(((x[0]/0.75)*(0.75+pr),tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75))),W)
+	edges[10].deformation = project(as_vector(((x[0]/0.75)*(0.75+pr),tc1*(x[0]/0.75)*(x[0]/0.75)+(0.25+pt-tc1)*(x[0]/0.75))),V)
 	def boundary_c1(x, on_boundary):
 		return on_polygon(x,edges[10], closed='c')
 
-	edges[11].deformation = project(as_vector(((x[0]/L1)*(Lr),tbl*(x[0]/L1)*(x[0]/L1)  +  (point_g_y  -  tbl)*(x[0]/L1))),W)
+	edges[11].deformation = project(as_vector(((x[0]/L1)*(Lr),tbl*(x[0]/L1)*(x[0]/L1)  +  (point_g_y  -  tbl)*(x[0]/L1))),V)
 	def boundary_bl(x, on_boundary):
 		return on_polygon(x,edges[11], closed='o')
 
-	edges[12].deformation = project(as_vector((x[0]+(Lr-L1),point_g_y)),W)
+	edges[12].deformation = project(as_vector((x[0]+(Lr-L1),point_g_y)),V)
 	def boundary_br(x, on_boundary):
 		return on_polygon(x,edges[12], closed='h')
 
-	edges[13].deformation = project(as_vector((((x[0]-L1)/(L2+0.5))  *  (L2+theta_r*(cos(phi)*sqrt(2)))  +  Lr,point_h_y)),W)
+	edges[13].deformation = project(as_vector((((x[0]-L1)/(L2+0.5))  *  (L2+theta_r*(cos(phi)*sqrt(2)))  +  Lr,point_h_y)),V)
 	def boundary_mr(x, on_boundary):
 		return on_polygon(x,edges[13], closed='c')
 
-	edges[14].deformation = project(as_vector((((x[1]+0.25)/(0.5))  *   theta_r*cos(phi)*sqrt(2)+ Lr+L2,((x[1]+0.25)/(0.5))  *  (point_h_y  - point_g_y)  + point_g_y)),W)
+	edges[14].deformation = project(as_vector(((x[1]/(0.5))  *   theta_r*cos(phi)*sqrt(2)+ Lr+L2,((x[1])/(0.5))  *  (point_h_y  - point_g_y)  + point_g_y)),V)
 	def boundary_rb(x, on_boundary):
 		return on_polygon(x,edges[14], closed='h')
 
-	edges[15].deformation = project(as_vector((((x[1]-0.25)/(0.5))  * (1-theta_r)*(cos(phi)*sqrt(2))  +  Lr+L2+theta_r*(cos(phi)*sqrt(2)),((x[1]-0.25)/(0.5))  *  (point_i_y - point_h_y) + point_h_y)),W)
+	edges[15].deformation = project(as_vector((((x[1]-0.5)/(0.5))  * (1-theta_r)*(cos(phi)*sqrt(2))  +  Lr+L2+theta_r*(cos(phi)*sqrt(2)),((x[1]-0.5)/(0.5))  *  (point_i_y - point_h_y) + point_h_y)),V)
 	def boundary_rt(x, on_boundary):
 		return on_polygon(x,edges[15], closed='o')
 
-	edges[16].deformation = project(as_vector((((x[0]-(L1+1.))/(L2))  *  L2  +  Lr+cos(phi)*sqrt(2),point_j_y)),W)
+	edges[16].deformation = project(as_vector((((x[0]-(L1+1.))/(L2))  *  L2  +  Lr+cos(phi)*sqrt(2),point_j_y)),V)
 	def boundary_br2(x, on_boundary):
 		return on_polygon(x,edges[16], closed='c')
 
-	edges[17].deformation = project(as_vector((((x[0]-1.)/L1)*(Lr)+cos(phi)*sqrt(2),tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  (point_j_y  -  (sin(phi)*sqrt(2))  -  tbl)*((x[0]-1.)/L1)  +  sin(phi)*sqrt(2))),W)
+	edges[17].deformation = project(as_vector((((x[0]-1.)/L1)*(Lr)+cos(phi)*sqrt(2),tbl*((x[0]-1.)/L1)*((x[0]-1.)/L1)  +  (point_j_y  -  (sin(phi)*sqrt(2))  -  tbl)*((x[0]-1.)/L1)  +  sin(phi)*sqrt(2))),V)
 	def boundary_bl2(x, on_boundary):
 		return on_polygon(x,edges[17], closed='o')
 
@@ -320,22 +357,22 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 
 	bcs = []
 	for i in range(0,edges_number):
-		bc = DirichletBC(W,(edges[i]).deformation, boundary_edges[i])
+		bc = DirichletBC(V,(edges[i]).deformation, boundary_edges[i])
 		bcs.append(bc)
 
 
 	# compute the deformation 
 	print ("******* compute the deformation from computational domain to fundamental cell:")
-	psit=TrialFunction(W)
-	vt=TestFunction(W)
+	psit=TrialFunction(V)
+	vt=TestFunction(V)
 	a = inner(grad(psit),grad(vt)) *dx
-	psi=Function(W, name='psi')
+	psi=Function(V, name='psi')
 	solve(lhs(a)==rhs(a), psi, bcs)
 
 	# compute the displacement
-	id = project(Identity2(),W)
-	dpsi = Function(W, name='dpsi')
-	dpsi = project(psi-id,W)
+	id = project(Identity2(),V)
+	dpsi = Function(V, name='dpsi')
+	dpsi.assign(project(psi-id,V))
 	return psi,dpsi
 
 
@@ -382,6 +419,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 	tbl = Constant(stbl)
 
 	psi, dpsi = get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,edges,edges_number,W,x)
+	
 
 	GA = array_to_const_mat(G_tl)
 	GB = array_to_const_mat(G_tr)
@@ -547,8 +585,8 @@ alpha = 0.5*pi
 delta = 0.1
 
 
-G_tl = [[1 + delta*cos(alpha)*sin(alpha) ,-delta*cos(alpha)*cos(alpha)],[delta*sin(alpha)*sin(alpha),1-delta*cos(alpha)*sin(alpha)]]
-G_tr = [[1-delta*cos(alpha)*sin(alpha) ,delta*cos(alpha)*cos(alpha)],[-delta*sin(alpha)*sin(alpha),1+delta*cos(alpha)*sin(alpha)]]
+G_tr = [[1 + delta*cos(alpha)*sin(alpha) ,-delta*cos(alpha)*cos(alpha)],[delta*sin(alpha)*sin(alpha),1-delta*cos(alpha)*sin(alpha)]]
+G_tl = [[1-delta*cos(alpha)*sin(alpha) ,delta*cos(alpha)*cos(alpha)],[-delta*sin(alpha)*sin(alpha),1+delta*cos(alpha)*sin(alpha)]]
 G_rt = [[1,-delta],[0,1]]
 G_rb = [[1,delta],[0,1]]
 
@@ -574,7 +612,7 @@ stbl = 0.
 prin = True
 write = True
 
-#sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = 2.393875371e-03, 2.697566465e-01, 6.991500095e+00, 6.987496831e+00, -1.953953583e-01, -2.440535251e-01, 1.309566403e-01, 1.135755339e-01, -1.567828415e-02, 5.321187074e-03, -1.373281913e-02, 1.213123984e-01
+sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = 2.664148023e-02, 2.718169580e-02, 6.992486160e+00, 6.994278267e+00, 2.464318304e-01, -2.156438821e-01, 8.019977158e-04, -4.409814224e-02, 9.000486501e-04, 1.831112632e-02, -4.287372190e-02, 1.895393264e-02
 
 string_time = time.strftime("%d_%b_%H_%M", time.gmtime())
 
@@ -585,13 +623,13 @@ file.parameters ["flush_output"] = True
 file.parameters["functions_share_mesh"] = True
 file.parameters ["rewrite_function_mesh"] = False
 
-maxi = 1
+maxi = 100
 delta_E = 1.
 E_alt=100
 i = 0
 while ((i<maxi)&(delta_E>1e-7)):
 	it = 0
-	taylor_testing = 13
+	taylor_testing = 14
 	set_working_tape(Tape())
 	# 0 for taylor test in all controls
 	# 1-12 for taylor test in control 1-12

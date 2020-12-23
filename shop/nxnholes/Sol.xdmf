@@ -4,73 +4,138 @@
   <Domain>
     <Grid Name="TimeSeries" GridType="Collection" CollectionType="Temporal">
       <Grid Name="mesh" GridType="Uniform">
-        <Topology NumberOfElements="25720" TopologyType="Triangle" NodesPerElement="3">
-          <DataItem Dimensions="25720 3" NumberType="UInt" Format="HDF">Sol.h5:/Mesh/0/mesh/topology</DataItem>
+        <Topology NumberOfElements="16217" TopologyType="Triangle" NodesPerElement="3">
+          <DataItem Dimensions="16217 3" NumberType="UInt" Format="HDF">Sol.h5:/Mesh/0/mesh/topology</DataItem>
         </Topology>
         <Geometry GeometryType="XY">
-          <DataItem Dimensions="14013 2" Format="HDF">Sol.h5:/Mesh/0/mesh/geometry</DataItem>
+          <DataItem Dimensions="8984 2" Format="HDF">Sol.h5:/Mesh/0/mesh/geometry</DataItem>
         </Geometry>
         <Time Value="0" />
         <Attribute Name="dens" AttributeType="Scalar" Center="Node">
-          <DataItem Dimensions="14013 1" Format="HDF">Sol.h5:/VisualisationVector/0</DataItem>
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/0</DataItem>
         </Attribute>
         <Attribute Name="psi" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/1</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/1</DataItem>
         </Attribute>
         <Attribute Name="u" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/2</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/2</DataItem>
         </Attribute>
       </Grid>
       <Grid>
         <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
         <Time Value="15" />
         <Attribute Name="dens" AttributeType="Scalar" Center="Node">
-          <DataItem Dimensions="14013 1" Format="HDF">Sol.h5:/VisualisationVector/3</DataItem>
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/3</DataItem>
         </Attribute>
         <Attribute Name="psi" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/4</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/4</DataItem>
         </Attribute>
         <Attribute Name="u" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/5</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/5</DataItem>
         </Attribute>
       </Grid>
       <Grid>
         <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
         <Time Value="30" />
         <Attribute Name="dens" AttributeType="Scalar" Center="Node">
-          <DataItem Dimensions="14013 1" Format="HDF">Sol.h5:/VisualisationVector/6</DataItem>
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/6</DataItem>
         </Attribute>
         <Attribute Name="psi" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/7</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/7</DataItem>
         </Attribute>
         <Attribute Name="u" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/8</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/8</DataItem>
         </Attribute>
       </Grid>
       <Grid>
         <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
         <Time Value="45" />
         <Attribute Name="dens" AttributeType="Scalar" Center="Node">
-          <DataItem Dimensions="14013 1" Format="HDF">Sol.h5:/VisualisationVector/9</DataItem>
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/9</DataItem>
         </Attribute>
         <Attribute Name="psi" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/10</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/10</DataItem>
         </Attribute>
         <Attribute Name="u" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/11</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/11</DataItem>
         </Attribute>
       </Grid>
       <Grid>
         <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
-        <Time Value="57" />
+        <Time Value="60" />
         <Attribute Name="dens" AttributeType="Scalar" Center="Node">
-          <DataItem Dimensions="14013 1" Format="HDF">Sol.h5:/VisualisationVector/12</DataItem>
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/12</DataItem>
         </Attribute>
         <Attribute Name="psi" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/13</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/13</DataItem>
         </Attribute>
         <Attribute Name="u" AttributeType="Vector" Center="Node">
-          <DataItem Dimensions="14013 3" Format="HDF">Sol.h5:/VisualisationVector/14</DataItem>
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/14</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid>
+        <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
+        <Time Value="75" />
+        <Attribute Name="dens" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/15</DataItem>
+        </Attribute>
+        <Attribute Name="psi" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/16</DataItem>
+        </Attribute>
+        <Attribute Name="u" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/17</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid>
+        <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
+        <Time Value="90" />
+        <Attribute Name="dens" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/18</DataItem>
+        </Attribute>
+        <Attribute Name="psi" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/19</DataItem>
+        </Attribute>
+        <Attribute Name="u" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/20</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid>
+        <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
+        <Time Value="105" />
+        <Attribute Name="dens" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/21</DataItem>
+        </Attribute>
+        <Attribute Name="psi" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/22</DataItem>
+        </Attribute>
+        <Attribute Name="u" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/23</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid>
+        <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
+        <Time Value="120" />
+        <Attribute Name="dens" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/24</DataItem>
+        </Attribute>
+        <Attribute Name="psi" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/25</DataItem>
+        </Attribute>
+        <Attribute Name="u" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/26</DataItem>
+        </Attribute>
+      </Grid>
+      <Grid>
+        <xi:include xpointer="xpointer(//Grid[@Name=&quot;TimeSeries&quot;]/Grid[1]/*[self::Topology or self::Geometry])" />
+        <Time Value="126" />
+        <Attribute Name="dens" AttributeType="Scalar" Center="Node">
+          <DataItem Dimensions="8984 1" Format="HDF">Sol.h5:/VisualisationVector/27</DataItem>
+        </Attribute>
+        <Attribute Name="psi" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/28</DataItem>
+        </Attribute>
+        <Attribute Name="u" AttributeType="Vector" Center="Node">
+          <DataItem Dimensions="8984 3" Format="HDF">Sol.h5:/VisualisationVector/29</DataItem>
         </Attribute>
       </Grid>
     </Grid>

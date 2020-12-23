@@ -93,7 +93,7 @@ def derivative_cb(j, dj, m):
 
 def get_elast_def(alpha,n,U):
 	dpsi,psi = get_deformation(alpha,n,U)
-	g = Constant((0,-1.*weight))
+	g = Constant((-0.5*weight,0))
 	
 	C = dot (g,u) * ds(1)
 	S = energy_density(u,psi) * dx
@@ -116,16 +116,16 @@ def get_elast_def(alpha,n,U):
 #         start of programm                                    
 
 # parameter for number of holes
-n = 5
-resolution = 50
+n = 8
+resolution = 80
 
 # parameter for elsasticity
 la = 5.
 mu = 5.
 weight = 1.5
 volweight = 0.15
-ftol = 1e-8
-gtol = 1e-6
+ftol = 1e-10
+gtol = 1e-8
 
 #         defining the domain and the function spaces               
 domain = Rectangle(dolfin.Point(0., 0.), dolfin.Point(1., 1.)) 
