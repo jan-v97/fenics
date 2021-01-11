@@ -3,6 +3,7 @@ from fenics_adjoint import *
 from pyadjoint.overloaded_type import create_overloaded_object
 from mshr import *
 import numpy as np
+import math
 
 class Identity2(UserExpression):
 	def __init__(self, **kwargs):
@@ -16,16 +17,11 @@ class Identity2(UserExpression):
 		return (2,)
 
 
-def boundary_exp(i,j,n):
-	return lambda x, on_boundary : on_boundary and i<x[0]*n<i+1 and j<x[1]*n<j+1 
-
 # this function computes the deformation psi and the displacement dpsi for a given vector of parameters alpha
 def get_deformation(alpha,n,U):
 	# define the deformation on the boundaries
 	boundary_psi = []
-	for i in range(0,n):
-		for j in range(0,n):
-			boundary_psi.append(DirichletBC(U,project(as_vector(((((x[0]*n-i-0.5)*alpha[n*i+j])+i+0.5)/n,(((x[1]*n-j-0.5)*alpha[n*i+j])+j+0.5)/n)),U),boundary_exp(i,j,n)))
+	boundary_psi.append(DirichletBC(U,project(as_vector(((((x[0]*n-math.floor(x[0]*n)-0.5)*alpha[n*math.floor(x[0]*n)+math.floor(x[1]*n)])+math.floor(x[0]*n)+0.5)/n,(((x[1]*n-math.floor(x[1]*n)-0.5)*alpha[n*math.floor(x[0]*n)+math.floor(x[1]*n)])+math.floor(x[1]*n)+0.5)/n)),U),lambda x, on_boundary : on_boundary and not(near(x[0],0) or near(x[1],0) or near(x[0],1) or near(x[1],1))))
 	boundary_psi.append(DirichletBC(U,project(as_vector((x[0],x[1])),U),lambda x, on_boundary: on_boundary and (near(x[0],0) or near(x[1],0) or near(x[0],1) or near(x[1],1))))
 
 	# solve linear equation to get complete deformation
@@ -123,7 +119,7 @@ resolution = 80
 la = 5.
 mu = 5.
 weight = 1.5
-volweight = 0.15
+volweight = 0.4
 ftol = 1e-10
 gtol = 1e-8
 

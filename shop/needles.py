@@ -137,7 +137,7 @@ def m_to_array(m):
 
 def get_points(L1,L2,resolution):
 	L = L1+L2
-	h = 0.1
+	h = 4./resolution
 	num_points_1 = int(L1/h)
 	num_points_2 = int(L2/h)
 	num_points_3 = int((L1-0.75)/h)
@@ -377,9 +377,8 @@ def get_deformation(L1,L2,theta_t,theta_r,phi,alpha,resolution,delta_t,delta_r,L
 
 
 #                                                 the programm                                        
-def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter):
+def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter,mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d):
 
-	mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d, chi_test, verts = get_mesh(L1,L2,theta_t,theta_r,resolution)
 	x = SpatialCoordinate(mesh)
 
 	class PeriodicBoundary (SubDomain):
@@ -406,7 +405,7 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 	Delta_r = Constant(sDelta_r)
 	#stretching of needle
 	Lt = Constant(sLt)
-	Lr = Constant(sLt)
+	Lr = Constant(sLr)
 	#displacement of midpoint
 	pt = Constant(spt)
 	pr = Constant(spr)
@@ -468,6 +467,15 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 			print_and_write_sol(True,True,j,vec_m[0],vec_m[1],vec_m[2],vec_m[3],vec_m[4],vec_m[5],vec_m[6],vec_m[7],vec_m[8],vec_m[9],vec_m[10],vec_m[11],0,0,0,it,string_time,0)
 		it = it + 1
 
+	def derivative_cb_1(j, dj, m):
+		vec_m = m_to_array(m)
+		global it
+		global string_time
+		print ("dj_cb, it: ",it, " m: ",vec_m)
+		if (it%1==0):
+			print_and_write_sol(True,True,j,vec_m[0],0,0,0,0,0,0,0,0,0,0,0,0,0,0,it,string_time,0)
+		it = it + 1
+
 
 	controls = [Control(Delta_t),Control(Delta_r),Control(Lt),Control(Lr),Control(pt),Control(pr),Control(tc1),Control(tc2),Control(tc3),Control(tc4),Control(tlb),Control(tbl)]
 	h = [Constant(1.5),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1),Constant(0.1)]
@@ -491,16 +499,25 @@ def do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t
 		
 		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
 
+	elif (14<=taylor_testing<=25):
+		Ehat = ReducedFunctional(Energy, [controls[taylor_testing-14]],derivative_cb_post = derivative_cb_1)
+		min = minimize (Ehat, method = method, tol = 1e-12, options = {'disp': True, 'ftol':ftol, 'gtol': gtol,'maxiter':maxiter}, callback = iter_cb)
+		returns = [Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl]
+		returns[taylor_testing-14] = min
+		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = returns
+		
+
 	elif (taylor_testing==13):
 		
 		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
-		return Energy,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl), chi_test,dpsi,u,verts
+		return Energy,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),dpsi,u
 
 	else:
+		bounds = [[-1000,-1000,0.75,0.75,-1000,-1000,-1000,-1000,-1000,-1000,-1000,-1000],[1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000,1000]]
 		Ehat = ReducedFunctional(assemble(E), controls,derivative_cb_post = derivative_cb)
-		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = method, tol = 1e-12, options = {'disp': True, 'ftol':ftol, 'gtol': gtol,'maxiter':maxiter}, callback = iter_cb)
+		rDelta_t,rDelta_r,rLt,rLr,rpt,rpr,rtc1,rtc2,rtc3,rtc4,rtlb,rtbl = minimize (Ehat, method = method, tol = 1e-12,bounds=bounds, options = {'disp': True, 'ftol':ftol, 'gtol': gtol,'maxiter':maxiter}, callback = iter_cb)
 
-	return Energy,float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl), chi_test,dpsi,u,verts
+	return assemble(E),float(rDelta_t),float(rDelta_r),float(rLt),float(rLr),float(rpt),float(rpr),float(rtc1),float(rtc2),float(rtc3),float(rtc4),float(rtlb),float(rtbl),dpsi,u
 
 #                     print and write                            
 
@@ -524,7 +541,7 @@ def print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,
 		print('\n{:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} '.format(sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl))
 
 	if write:
-		datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+		datei = open("needles/"+string_time+"_log.txt",'a')
 		datei.write("***************    ")
 		datei.write(time.ctime())
 		datei.write("     *************** ")
@@ -554,41 +571,43 @@ def print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3
 
 	if write:
 		if not (verts==0):
-			datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+			datei = open("needles/"+string_time+"_log.txt",'a')
 			datei.write('\n {:3d}    {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:9.0f} {:10d} {:10d} {:3d}'.format(i,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,time,resolution,verts,it))
 		else:
-			datei = open('needles/ergebnisse_'+string_time+'.txt','a')
+			datei = open("needles/"+string_time+'_log.txt','a')
 			datei.write('\n    {:3d} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e} {:.9e}'.format(it,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl))
 		datei.close()
 
 #                                               input parameters, edges, bc, domains                                          
 
 # input parameters for computational domain
-L1 = 7.
-L2 = 7.
-resolution = 2**5
+L1 = 1.5
+L2 = 5.
+resolution = 2**8
 
 # parameters for elastic energy
 a1=11.562724; a2=-17.437087; a3=10.062913; a4=-9.375448
 
 # parameters for Optimization
-ftol = 1e-8
-gtol = 1e-6
+ftol = 1e-12
+gtol = 1e-8
+# method = 'CG'
 method = 'L-BFGS-B'
-maxiter = 0
+maxiter = 30
 
 # input parameters for the twin structure
-theta_t = 0.5
-theta_r = 0.5
 phi = 0.25*pi
 alpha = 0.5*pi
+theta_t = 0.5
+theta_r = 0.5
+# theta_r = (theta_t-0.5)*(cos(alpha)*sin(alpha)*(cos(phi)/sin(phi))+cos(alpha)*cos(alpha))+0.5
 delta = 0.1
 
 
 G_tr = [[1 + delta*cos(alpha)*sin(alpha) ,-delta*cos(alpha)*cos(alpha)],[delta*sin(alpha)*sin(alpha),1-delta*cos(alpha)*sin(alpha)]]
 G_tl = [[1-delta*cos(alpha)*sin(alpha) ,delta*cos(alpha)*cos(alpha)],[-delta*sin(alpha)*sin(alpha),1+delta*cos(alpha)*sin(alpha)]]
-G_rt = [[1,-delta],[0,1]]
-G_rb = [[1,delta],[0,1]]
+G_rt = [[1,delta],[0,1]]
+G_rb = [[1,-delta],[0,1]]
 
 
 #startparameters for the shape optimization
@@ -612,31 +631,34 @@ stbl = 0.
 prin = True
 write = True
 
-sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = 2.664148023e-02, 2.718169580e-02, 6.992486160e+00, 6.994278267e+00, 2.464318304e-01, -2.156438821e-01, 8.019977158e-04, -4.409814224e-02, 9.000486501e-04, 1.831112632e-02, -4.287372190e-02, 1.895393264e-02
+#sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = 2.598051445e-01, 4.337388497e-02, 9.866990118e-01, 1.402109923e+00, 1.962614530e-01, 1.156560173e-01, -3.106693171e-01, -1.856464106e-02, -1.103661512e-01, 2.180654962e-01, -4.144822456e-01, -2.783244785e-02
 
-string_time = time.strftime("%d_%b_%H_%M", time.gmtime())
+string_time = time.strftime("%b_%d_%H_%M", time.gmtime())
 
 print_and_write(prin,write,L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,string_time)
 
-file = XDMFFile ("needles/file.xdmf")
+file = XDMFFile ("needles/"+string_time+"_file.xdmf")
 file.parameters ["flush_output"] = True
 file.parameters["functions_share_mesh"] = True
 file.parameters ["rewrite_function_mesh"] = False
+mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d, chi_test, verts = get_mesh(L1,L2,theta_t,theta_r,resolution)
 
-maxi = 100
-delta_E = 1.
-E_alt=100
+maxi = 15
+#delta_E = 1.
+#E_alt=1
+it = 0
 i = 0
-while ((i<maxi)&(delta_E>1e-7)):
+while ((i<maxi)&(not(it==2))):
 	it = 0
-	taylor_testing = 14
+	taylor_testing = -1
 	set_working_tape(Tape())
 	# 0 for taylor test in all controls
 	# 1-12 for taylor test in control 1-12
 	# 13 just computing deformation
+	# 14-25 optimization in just one control
 	# else shape opt
 	start = time.time()
-	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter)
+	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, dpsi, u = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl,G_tl,G_tr,G_rt,G_rb,taylor_testing,ftol,gtol,method,maxiter,mesh, edges, edges_number, chi_a, chi_b, chi_c, chi_d)
 	end = time.time()
 
 	# computing the deformation at the ende
@@ -645,7 +667,7 @@ while ((i<maxi)&(delta_E>1e-7)):
 	#	E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl, chi_test, dpsi, u,verts = do_shape_opt(L1,L2,theta_t,theta_r,phi,alpha,resolution,a1,a2,a3,a4,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,G_tl,G_tr,G_rt,G_rb,13,ftol,gtol,method,maxiter)
 	
 
-	print_and_write_sol(prin,write,E_end,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it,string_time,i)
+	print_and_write_sol(prin,write,0.,Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl,end-start,resolution,verts,it,string_time,i)
 	print("E_end:",E_end)
 
 	sDelta_t,sDelta_r,sLt,sLr,spt,spr,stc1,stc2,stc3,stc4,stlb,stbl = Delta_t,Delta_r,Lt,Lr,pt,pr,tc1,tc2,tc3,tc4,tlb,tbl
@@ -659,6 +681,6 @@ while ((i<maxi)&(delta_E>1e-7)):
 	file.write(u, i)
 	file.close()
 
-	delta_E = abs(E_alt - E_end)
-	E_alt = E_end
+	#delta_E = abs(E_alt - E_end)
+	#E_alt = E_end
 	i = i+1

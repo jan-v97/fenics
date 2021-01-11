@@ -4,9 +4,10 @@
     "\\deformation",
     "\\ellipse",
     "\\shop",
+    "\\shop\\needles",
     "\\test",
     "\\test\\poisson2"
   ],
-  "SelectedNode": "\\shop\\needles.py",
+  "SelectedNode": "\\shop",
   "PreviewInSolutionExplorer": false
 }
