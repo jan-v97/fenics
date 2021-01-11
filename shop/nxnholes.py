@@ -18,10 +18,14 @@ class Identity2(UserExpression):
 
 
 # this function computes the deformation psi and the displacement dpsi for a given vector of parameters alpha
-def get_deformation(alpha,n,U):
+def get_deformation(alpha,n,U,char_funcs):
 	# define the deformation on the boundaries
+	boundary_function = as_vector((0,0))
+	for i in range(0,n):
+		for j in range(0,n):
+			boundary_function =as_vector(boundary_function+as_vector(((char_funcs[n*i+j]*(((x[0]*n-i-0.5)*alpha[n*i+j])+i+0.5)/n),(((x[1]*n-j-0.5)*alpha[n*i+j]+j+0.5)/n))))
 	boundary_psi = []
-	boundary_psi.append(DirichletBC(U,project(as_vector(((((x[0]*n-math.floor(x[0]*n)-0.5)*alpha[n*math.floor(x[0]*n)+math.floor(x[1]*n)])+math.floor(x[0]*n)+0.5)/n,(((x[1]*n-math.floor(x[1]*n)-0.5)*alpha[n*math.floor(x[0]*n)+math.floor(x[1]*n)])+math.floor(x[1]*n)+0.5)/n)),U),lambda x, on_boundary : on_boundary and not(near(x[0],0) or near(x[1],0) or near(x[0],1) or near(x[1],1))))
+	boundary_psi.append(DirichletBC(U,project(boundary_function,U),lambda x, on_boundary : on_boundary and not(near(x[0],0) or near(x[1],0) or near(x[0],1) or near(x[1],1))))
 	boundary_psi.append(DirichletBC(U,project(as_vector((x[0],x[1])),U),lambda x, on_boundary: on_boundary and (near(x[0],0) or near(x[1],0) or near(x[0],1) or near(x[1],1))))
 
 	# solve linear equation to get complete deformation
@@ -87,8 +91,8 @@ def derivative_cb(j, dj, m):
 		ausgabe(u,dpsi,psi,k)
 
 
-def get_elast_def(alpha,n,U):
-	dpsi,psi = get_deformation(alpha,n,U)
+def get_elast_def(alpha,n,U,char_funcs):
+	dpsi,psi = get_deformation(alpha,n,U,char_funcs)
 	g = Constant((-0.5*weight,0))
 	
 	C = dot (g,u) * ds(1)
@@ -113,7 +117,7 @@ def get_elast_def(alpha,n,U):
 
 # parameter for number of holes
 n = 8
-resolution = 80
+resolution = 20
 
 # parameter for elsasticity
 la = 5.
@@ -129,10 +133,52 @@ for i in range(0,n):
 	for j in range(0,n):
 		domain = domain - Circle(dolfin.Point((0.5+i)/n, (0.5+j)/n), 1/(4*n))
 
+for i in range(0,n):
+	for j in range(0,n):
+		#print(i*n+j+1)
+		domain.set_subdomain (i*n+j+1, Polygon([dolfin.Point(i/n,j/n),dolfin.Point((i+1)/n,j/n),dolfin.Point((i+1)/n,(j+1)/n),dolfin.Point(i/n,(j+1)/n)]))
+
+
 # define mesh and function space
 mesh = generate_mesh (domain, resolution)
 mesh = create_overloaded_object(mesh)
 x = SpatialCoordinate(mesh)
+
+
+# defining coefficients on subdomains
+X = FunctionSpace (mesh, "DG", 0)
+dm = X.dofmap()
+sudom = MeshFunction ('size_t', mesh, 2, mesh.domains())
+print(sudom.array())
+sudom_arr = np.asarray (sudom.array(), dtype=np.int)
+print(sudom_arr.size)
+for cell in cells (mesh): sudom_arr [dm.cell_dofs (cell.index())] = sudom [cell]
+
+const = project(Constant(0),X)
+file2 = XDMFFile('nxnholes/const.xdmf')
+file2.write(const,0)
+
+def sudom_fct (sudom_arr, vals, fctspace):
+	f = Function (fctspace)
+	f.vector()[:] = np.choose (sudom_arr, vals)
+	return f
+
+# creat list with nxn+1 zeros
+zeros = [0]
+colorful = [0]
+for i in range(0,n):
+	for j in range(0,n):
+		zeros.append(0)
+		colorful.append(n*i+j+1)
+
+char_funcs = []
+for i in range(0,n):
+	for j in range(0,n):
+		zeros[n*i+j+1] = 1
+		print(zeros)
+		print(colorful)
+		char_funcs.append(sudom_fct (sudom_arr,zeros, X))
+		zeros[n*i+j+1] = 0
 
 # Function spaces
 U = VectorFunctionSpace (mesh, 'CG', 1)
@@ -178,7 +224,7 @@ file.parameters["functions_share_mesh"] = True
 file.parameters ["rewrite_function_mesh"] = False
 
 
-dpsi,psi,u,J = get_elast_def(alpha,n,U)
+dpsi,psi,u,J = get_elast_def(alpha,n,U,char_funcs)
 ausgabe(u,dpsi,psi,0)
 
 Jhat = ReducedFunctional(assemble(J),calpha,derivative_cb_post = derivative_cb)
